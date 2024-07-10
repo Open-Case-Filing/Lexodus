@@ -1,0 +1,9 @@
+thread '<unnamed>' panicked at /Users/THarpool/.cargo/registry/src/index.crates.io-6f17d22bba15001f/leptos-spin-0.2.0/src/server_fn.rs:68:21:
+Server FN path /api/get_action_menu_data8617339666000899951 not found
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+thread '<unnamed>' panicked at /Users/THarpool/.cargo/registry/src/index.crates.io-6f17d22bba15001f/leptos-spin-0.2.0/src/server_fn.rs:68:21:
+Server FN path /api/get_action_menu_data8617339666000899951 not found
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+thread '<unnamed>' panicked at /Users/THarpool/.cargo/registry/src/index.crates.io-6f17d22bba15001f/leptos-spin-0.2.0/src/server_fn.rs:68:21:
+Server FN path /api/get_action_menu_data8617339666000899951 not found
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
