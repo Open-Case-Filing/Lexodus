@@ -13,3 +13,4 @@ Cargo.lock
 .vscode
 vendor
 .spin/logs
+runtime-config.toml

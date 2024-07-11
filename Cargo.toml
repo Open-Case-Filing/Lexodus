@@ -1,5 +1,5 @@
 [package]
-name = "ocfs-spin-ssr"
+name = "lexodus"
 authors = ["itowlson <ivan.towlson@fermyon.com>"]
 description = ""
 version = "0.1.0"
