@@ -1,0 +1,13 @@
+# Rename this file to runtime-config.toml to use it.
+# --runtime-config-file runtime-config.toml
+# This tells Spin to use the remote host as its default database
+# [sqlite_database.default]
+# type = "libsql"
+# url = "httos://lexodus-tyler-harpool.turso.io"
+# token = ""
+
+# [[config_provider]]
+# type = "vault"
+# url = "https://vault-public-vault-e7744839.59c100d2.z1.hashicorp.cloud:8200"
+# token = "VAULT_TOKEN"
+# mount = "admin/secret"
