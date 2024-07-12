@@ -2,69 +2,8 @@ use crate::models::case::Case;
 use chrono::{TimeZone, Utc};
 use leptos::*;
 
-
-
-#[server(SearchCases, "/api")]
-pub async fn search_cases(search: String) -> Result<Vec<Case>, ServerFnError> {
-    let all_cases = get_all_cases();
-
-    let search_terms: Vec<String> = search
-        .split_whitespace()
-        .map(|s| s.to_lowercase())
-        .collect();
-
-    Ok(all_cases
-        .into_iter()
-        .filter(|case| {
-            search_terms.iter().all(|term| {
-                // Define is_date_match closure
-                let is_date_match = |date: chrono::DateTime<Utc>| {
-                    let date_str = date.format("%Y-%m-%d").to_string().to_lowercase();
-                    let year_str = date.format("%Y").to_string();
-                    let month_str = date.format("%m").to_string();
-                    let day_str = date.format("%d").to_string();
-
-                    term == &year_str
-                        || term == &month_str
-                        || term == &day_str
-                        || date_str.contains(term)
-                        || chrono::NaiveDate::parse_from_str(term, "%Y-%m-%d")
-                            .map(|parsed_date| parsed_date == date.naive_utc().date())
-                            .unwrap_or(false)
-                };
-
-                // Use is_date_match in our filter conditions
-                case.case_name.to_lowercase().contains(term)
-                    || case.court.to_lowercase().contains(term)
-                    || case.case_number.to_lowercase().contains(term)
-                    || case
-                        .assigned_to
-                        .as_ref()
-                        .map(|s| s.to_lowercase().contains(term))
-                        .unwrap_or(false)
-                    || case.status.to_lowercase().contains(term)
-                    || case.jurisdiction_type.to_lowercase().contains(term)
-                    || case
-                        .nature_of_suit
-                        .as_ref()
-                        .map(|s| s.to_lowercase().contains(term))
-                        .unwrap_or(false)
-                    || case
-                        .cause
-                        .as_ref()
-                        .map(|s| s.to_lowercase().contains(term))
-                        .unwrap_or(false)
-                    || case.docket_number.to_lowercase().contains(term)
-                    || is_date_match(case.date_filed)
-                    || case.date_last_filing.map(is_date_match).unwrap_or(false)
-            })
-        })
-        .collect())
-}
-
-
-
 // Function to return all cases
+#[allow(dead_code)]
 fn get_all_cases() -> Vec<Case> {
     vec![
         Case {
@@ -278,4 +217,62 @@ fn get_all_cases() -> Vec<Case> {
             status: "Open".into(),
         },
     ]
+}
+
+#[server(SearchCases, "/api")]
+pub async fn search_cases(search: String) -> Result<Vec<Case>, ServerFnError> {
+    let all_cases = get_all_cases();
+
+    let search_terms: Vec<String> = search
+        .split_whitespace()
+        .map(|s| s.to_lowercase())
+        .collect();
+
+    Ok(all_cases
+        .into_iter()
+        .filter(|case| {
+            search_terms.iter().all(|term| {
+                // Define is_date_match closure
+                let is_date_match = |date: chrono::DateTime<Utc>| {
+                    let date_str = date.format("%Y-%m-%d").to_string().to_lowercase();
+                    let year_str = date.format("%Y").to_string();
+                    let month_str = date.format("%m").to_string();
+                    let day_str = date.format("%d").to_string();
+
+                    term == &year_str
+                        || term == &month_str
+                        || term == &day_str
+                        || date_str.contains(term)
+                        || chrono::NaiveDate::parse_from_str(term, "%Y-%m-%d")
+                            .map(|parsed_date| parsed_date == date.naive_utc().date())
+                            .unwrap_or(false)
+                };
+
+                // Use is_date_match in our filter conditions
+                case.case_name.to_lowercase().contains(term)
+                    || case.court.to_lowercase().contains(term)
+                    || case.case_number.to_lowercase().contains(term)
+                    || case
+                        .assigned_to
+                        .as_ref()
+                        .map(|s| s.to_lowercase().contains(term))
+                        .unwrap_or(false)
+                    || case.status.to_lowercase().contains(term)
+                    || case.jurisdiction_type.to_lowercase().contains(term)
+                    || case
+                        .nature_of_suit
+                        .as_ref()
+                        .map(|s| s.to_lowercase().contains(term))
+                        .unwrap_or(false)
+                    || case
+                        .cause
+                        .as_ref()
+                        .map(|s| s.to_lowercase().contains(term))
+                        .unwrap_or(false)
+                    || case.docket_number.to_lowercase().contains(term)
+                    || is_date_match(case.date_filed)
+                    || case.date_last_filing.map(is_date_match).unwrap_or(false)
+            })
+        })
+        .collect())
 }

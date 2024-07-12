@@ -11,8 +11,8 @@ route = "/..."
 component = "lexodus"
 
 [variables]
-secret = { required = true }
-dev = { required = true }
+secret = { default = "Hello, Lexodusian", required = false }
+dev = { default = "version: 0.1.0", required = false }
 
 [component.lexodus]
 source = "target/wasm32-wasi/release/lexodus.wasm"

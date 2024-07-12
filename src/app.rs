@@ -2,12 +2,11 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-
-use crate::pages::homepage::HomePage;
-use crate::pages::login::Login;
+use crate::pages::activity::Activity;
 use crate::pages::cases::*;
 use crate::pages::changelog::Changelog;
-use crate::pages::activity::Activity;
+use crate::pages::homepage::HomePage;
+use crate::pages::login::Login;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -15,7 +14,7 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-      <Stylesheet id="leptos" href="/pkg/ocfs_spin_ssr.css"/>
+      <Stylesheet id="leptos" href="/pkg/lexodus.css"/>
 
       // content for this welcome page
       <Router>
@@ -32,7 +31,6 @@ pub fn App() -> impl IntoView {
       </Router>
     }
 }
-
 
 /// 404 - Not Found
 #[component]
@@ -53,5 +51,3 @@ fn NotFound() -> impl IntoView {
 
     view! { <h1>"Not Found"</h1> }
 }
-
-
