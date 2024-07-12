@@ -1,8 +1,6 @@
 use crate::layouts::wide::Wide_Layout;
 use leptos::*;
 
-
-/
 #[component]
 pub fn Add() -> impl IntoView {
     view! {
