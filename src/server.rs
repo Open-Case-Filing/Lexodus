@@ -19,13 +19,13 @@ struct ToDo {
 async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     let mut conf = leptos::get_configuration(None).await.unwrap();
     conf.leptos_options.output_name = "lexodus".to_owned();
-    // let expected = variables::get("token").unwrap();
-    // let expected2 = variables::get("dev_value").unwrap();
-    // let response = format!(
-    //     "Hello, world! Token: {}, DEV_VALUE: {}",
-    //     expected, expected2
-    // );
-    // println!("Vault Response: {}", response);
+    let expected = variables::get("token").unwrap();
+    let expected2 = variables::get("dev_value").unwrap();
+    let response = format!(
+        "Hello, world! Token: {}, DEV_VALUE: {}",
+        expected, expected2
+    );
+    println!("Vault Response: {}", response);
 
     // register_explicit::<crate::pages::cases::UpdateCount>();
     let app_router = crate::app::App;
