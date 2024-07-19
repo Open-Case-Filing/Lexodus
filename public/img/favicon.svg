@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#1c2536"/>
+  <g transform="translate(15,15) scale(0.7)">
+    <!-- Stylized scale of justice -->
+    <path d="M50 10 L90 70 H10 Z" fill="none" stroke="#38bdf8" stroke-width="6"/>
+    <circle cx="50" cy="70" r="10" fill="#38bdf8"/>
+    <!-- Abstract representation of case files -->
+    <rect x="30" y="80" width="40" height="8" rx="2" fill="#38bdf8"/>
+    <rect x="35" y="72" width="30" height="8" rx="2" fill="#38bdf8"/>
+  </g>
+</svg>

@@ -4,33 +4,83 @@ spin_manifest_version = 2
 name = "lexodus"
 version = "0.1.0"
 authors = ["Tyler Harpool <tylerharpool@gmail.com>"]
-description = ""
-
-[[trigger.http]]
-route = "/..."
-component = "lexodus"
+description = "Lexodus - A fast, secure and relaible case management system"
 
 [variables]
 secret = { default = "Hello, Lexodusian", required = false }
 dev = { default = "version: 0.1.0", required = false }
 
+[[trigger.http]]
+route = "/..."
+component = "lexodus"
+
 [component.lexodus]
-source = "target/wasm32-wasi/release/lexodus.wasm"
+source = "target/wasm32-wasip1/release/lexodus.wasm"
 allowed_outbound_hosts = []
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
+
 
 [component.lexodus.build]
-command = "cargo leptos build --release && LEPTOS_OUTPUT_NAME=lexodus cargo build --lib --target wasm32-wasi --release --no-default-features --features ssr"
+command = "cargo leptos build --release && LEPTOS_OUTPUT_NAME=lexodus cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
 watch = ["src/**/*.rs", "Cargo.toml"]
+
+
+# [[trigger.http]]
+# route = "/favicon.svg"
+# component = "favicon"
+
+
+# [component.favicon]
+# source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+# files = [{ source = "public/img/favicon.svg", destination = "/favicon.svg" }]
+
+
+
+
+
+
+
 
 [[trigger.http]]
 route = "/pkg/..."
-component = "pkg"
+component = "ui"
 
 
-[component.pkg]
+[component.ui]
 source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+# source = "wasi/spin-fileserver/spin_static_fs.wasm"
 files = [{ source = "target/site/pkg", destination = "/" }]
+
+
+[[trigger.http]]
+route = "/fonts/..."
+component = "fonts"
+
+[component.fonts]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+
+#source = "wasi/spin-fileserver/spin_static_fs.wasm"
+files = [{ source = "public/fonts", destination = "/" }]
+
+[[trigger.http]]
+route = "/components/..."
+component = "components"
+
+[component.components]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+#source = "wasi/spin-fileserver/spin_static_fs.wasm"
+files = [{ source = "public/components", destination = "/" }]
+
+
+[[trigger.http]]
+route = "/img/..."
+component = "images"
+
+[component.images]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+#source = "wasi/spin-fileserver/spin_static_fs.wasm"
+files = [{ source = "public/img", destination = "/" }]
 
 
 [component.lexodus.variables]
