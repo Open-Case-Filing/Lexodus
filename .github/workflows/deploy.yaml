@@ -16,7 +16,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.81.0
+          toolchain: nightly
           targets: wasm32-wasip1 wasm32-unknown-unknown
 
       - name: Setup cargo-make
