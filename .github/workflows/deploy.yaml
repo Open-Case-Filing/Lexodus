@@ -16,7 +16,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.66
+          toolchain: 1.75
           targets: wasm32-wasi
       - name: Setup cargo-make
         uses: davidB/rust-cargo-make@v1
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install cargo-leptos
         run: cargo binstall cargo-leptos --no-confirm
-        
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
