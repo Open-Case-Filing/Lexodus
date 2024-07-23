@@ -24,6 +24,9 @@ jobs:
 
       - name: Cargo generate-lockfile
         run: cargo generate-lockfile
+        
+      - name: Install Cargo Component
+        run: cargo install cargo-component --locked
 
       - uses: Swatinem/rust-cache@v2
 
