@@ -17,7 +17,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.75
-          targets: wasm32-wasi
+          targets: wasm32-wasi wasm32-unknown-unknown
+
       - name: Setup cargo-make
         uses: davidB/rust-cargo-make@v1
 
