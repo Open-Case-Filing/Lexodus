@@ -25,15 +25,13 @@ jobs:
       - name: Cargo generate-lockfile
         run: cargo generate-lockfile
 
-
-
       - uses: Swatinem/rust-cache@v2
 
       - name: Install binstall
         uses: cargo-bins/cargo-binstall@main
 
       - name: Install Cargo Component
-        run: cargo binstall cargo-component
+        run: cargo binstall cargo-component --no-confirm
 
       - name: Install wasm-bindgen
         run: cargo binstall wasm-bindgen-cli --no-confirm
