@@ -24,14 +24,16 @@ jobs:
 
       - name: Cargo generate-lockfile
         run: cargo generate-lockfile
-        
-      - name: Install Cargo Component
-        run: cargo install cargo-component --locked
+
+
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Install binstall
         uses: cargo-bins/cargo-binstall@main
+
+      - name: Install Cargo Component
+        run: cargo binstall cargo-component
 
       - name: Install wasm-bindgen
         run: cargo binstall wasm-bindgen-cli --no-confirm
@@ -39,10 +41,7 @@ jobs:
       - name: Install cargo-leptos
         run: cargo binstall cargo-leptos --no-confirm
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+
       - name: Install Spin
         uses: fermyon/actions/spin/setup@v1
 
