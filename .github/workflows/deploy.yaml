@@ -11,14 +11,34 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and deploy
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.66
           targets: wasm32-wasi
+      - name: Setup cargo-make
+        uses: davidB/rust-cargo-make@v1
 
+      - name: Cargo generate-lockfile
+        run: cargo generate-lockfile
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install wasm-bindgen
+        run: cargo binstall wasm-bindgen-cli --no-confirm
+
+      - name: Install cargo-leptos
+        run: cargo binstall cargo-leptos --no-confirm
+        
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Install Spin
         uses: fermyon/actions/spin/setup@v1
 
