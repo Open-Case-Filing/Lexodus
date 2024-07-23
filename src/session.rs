@@ -15,8 +15,11 @@ pub struct SqliteStore{
 }
 #[derive(Debug, Clone)]
 pub struct SessionRow{
+    #[allow(dead_code)]
     id: String,
+    #[allow(dead_code)]
     expiry: Option<i64>,
+    #[allow(dead_code)]
     session: String,
 }
 impl SqliteStore {

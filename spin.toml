@@ -9,6 +9,11 @@ description = "Lexodus - A fast, secure and relaible case management system"
 [variables]
 secret = { default = "Hello, Lexodusian", required = false }
 dev = { default = "version: 0.1.0", required = false }
+db_url = { default = "postgres://app_user:dev_only_pwd@localhost:5432/app_db", required = false }
+turso_url = { default = "https://lexodus-tyler-harpool.turso.io", required = false }
+turso_token = { default = "", required = false }
+kv_explorer_user = { default = "ocfs", required = false }
+kv_explorer_password = { default = "ocfs", required = false }
 
 [[trigger.http]]
 route = "/..."
@@ -16,29 +21,19 @@ component = "lexodus"
 
 [component.lexodus]
 source = "target/wasm32-wasip1/release/lexodus.wasm"
-allowed_outbound_hosts = []
+
+allowed_outbound_hosts = [
+    "postgres://ep-floral-smoke-a528xmv4-pooler.us-east-2.aws.neon.tech",
+    "postgres://localhost:5432"
+]
 key_value_stores = ["default"]
 sqlite_databases = ["default"]
+
 
 
 [component.lexodus.build]
 command = "cargo leptos build --release && LEPTOS_OUTPUT_NAME=lexodus cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
 watch = ["src/**/*.rs", "Cargo.toml"]
-
-
-# [[trigger.http]]
-# route = "/favicon.svg"
-# component = "favicon"
-
-
-# [component.favicon]
-# source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
-# files = [{ source = "public/img/favicon.svg", destination = "/favicon.svg" }]
-
-
-
-
-
 
 
 
@@ -49,7 +44,6 @@ component = "ui"
 
 [component.ui]
 source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
-# source = "wasi/spin-fileserver/spin_static_fs.wasm"
 files = [{ source = "target/site/pkg", destination = "/" }]
 
 
@@ -63,14 +57,14 @@ source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v
 #source = "wasi/spin-fileserver/spin_static_fs.wasm"
 files = [{ source = "public/fonts", destination = "/" }]
 
-[[trigger.http]]
-route = "/components/..."
-component = "components"
+# [[trigger.http]]
+# route = "/components/..."
+# component = "components"
 
-[component.components]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
-#source = "wasi/spin-fileserver/spin_static_fs.wasm"
-files = [{ source = "public/components", destination = "/" }]
+# [component.components]
+# source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.1.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+# #source = "wasi/spin-fileserver/spin_static_fs.wasm"
+# files = [{ source = "public/components", destination = "/" }]
 
 
 [[trigger.http]]
@@ -86,3 +80,22 @@ files = [{ source = "public/img", destination = "/" }]
 [component.lexodus.variables]
 token = "{{ secret }}"
 dev_value = "{{dev}}"
+db_url = "{{db_url}}"
+turso_url = "{{turso_url}}"
+turso_token = "{{turso_token}}"
+kv_explorer_user = "{{kv_explorer_user}}"
+kv_explorer_password = "{{kv_explorer_password}}"
+
+
+[[trigger.http]]
+component = "kv-explorer"
+route = "/internal/kv-explorer/..."
+
+[component.kv-explorer]
+source = { url = "https://github.com/fermyon/spin-kv-explorer/releases/download/v0.10.0/spin-kv-explorer.wasm", digest = "sha256:65bc286f8315746d1beecd2430e178f539fa487ebf6520099daae09a35dbce1d" }
+allowed_outbound_hosts = ["redis://*:*", "mysql://*:*", "postgres://*:*"]
+# add or remove stores you want to explore here
+key_value_stores = ["default"]
+
+[component.kv-explorer.variables]
+kv_credentials = "{{ kv_explorer_user }}:{{ kv_explorer_password }}"

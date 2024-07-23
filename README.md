@@ -14,3 +14,9 @@ cargo install --locked leptos
 rustup target add wasm32-unknown-unknown &&\
 rustup target add wasm32-wasi
 ```
+
+## Run the project
+```bash
+spin up --build
+```
+
