@@ -22,7 +22,7 @@ pub fn App() -> impl IntoView {
           <Routes>
             <Route path="/" view=Login/>
             <Route path="/dashboard/overview" view=HomePage/>
-            <Route path="/case/add" view=CivilCaseForm/>
+            <Route path="/case/add" view=CaseList/>
             <Route path="/changelog" view=Changelog/>
             <Route path="/case/activity" view=Activity/>
             <Route path="/*any" view=NotFound/>

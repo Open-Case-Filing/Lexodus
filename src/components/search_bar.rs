@@ -41,14 +41,17 @@ pub fn SearchBar() -> impl IntoView {
                         <tbody>
                         {move || cases.get().map(|result| match result {
                             Ok(cases) => cases.into_iter().map(|case| view! {
-                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_name}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.court}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.date_filed.format("%Y-%m-%d").to_string()}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.assigned_to.unwrap_or_default()}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                </tr>
+                              <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.filed_date.format("%Y-%m-%d").to_string()}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">
+                                      {case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}
+                                  </td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
+                              </tr>
+
                             }).collect_view(),
                             Err(_) => view! { <tr><td colspan="6" class="text-center">"Error loading cases"</td></tr> }.into_view()
                         })}

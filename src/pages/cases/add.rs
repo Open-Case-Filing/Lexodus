@@ -2,233 +2,189 @@ use leptos::*;
 use leptos_router::ActionForm;
 use crate::layouts::wide::Wide_Layout;
 use crate::models::case::Case;
+use chrono::Utc;
+use cfg_if::cfg_if;
 
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+        use spin_sdk::pg::{Connection, ParameterValue};
+        use spin_sdk::{http_component, variables};
 
-// Define the structure for our case data
-#[server(AddCase, "/api")]
-pub async fn add_case(case_number: String, case_title: String) -> Result<Vec<Case>, ServerFnError> {
-    // Add the case to the database
-    // This is where you would add the case to your database
-    // For now, we'll just print it to the console
-    use chrono::{TimeZone, Utc};
-    use leptos_spin::redirect;
-    let add_case = create_server_action::<AddCase>();
-    println!("Adding case: {} {}", case_number, case_title);
-
-    let has_error = move || add_case.value().with(|val| matches!(val, Some(Err(_))));
-    if has_error() {
-        return Err(ServerFnError::new("Error adding case"));
     }
-    redirect("/dashboard/overview");
+}
 
-    let add_civil_case = vec![
+#[server(AddCase, "/api")]
+pub async fn add_case(
+  case_number: String,
+  title: String,
+  status: String,
+  filed_date: String,
+  closed_date: Option<String>,
+  court_name: String,
+  current_court_name: String,
+  judge_name: Option<String>,
+
+) -> Result<String, ServerFnError> {
+  let db_url = variables::get("db_url").unwrap();
+println!("Hello params: {}", case_number);
+ let conn = spin_sdk::pg::Connection::open(&db_url)?;
+
+ let sql = "INSERT INTO cases (case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id)
+            VALUES ($1, $2, $3, $4, $5,
+                    (SELECT id FROM courts WHERE name = $6),
+                    (SELECT id FROM courts WHERE name = $7),
+                    (SELECT id FROM judges WHERE name = $8))";
+
+ let execute_result = conn.execute(
+     sql,
+     &[
+         ParameterValue::Str(case_number.clone()),
+         ParameterValue::Str(title.clone()),
+         ParameterValue::Str(status.clone()),
+         ParameterValue::Str(filed_date.clone()),
+         ParameterValue::Str(closed_date.unwrap_or_default()),
+         ParameterValue::Str(court_name.clone()),
+         ParameterValue::Str(current_court_name.clone()),
+         ParameterValue::Str(judge_name.unwrap_or_default()),
+     ]);
+ match execute_result {
+     Ok(rows_affected) => {
+         println!("Rows affected: {}", rows_affected);
+         Ok(format!("Case added successfully: {}", rows_affected))
+     },
+     Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
+ }
+
+
+}
+
+#[server(GetCases, "/api")]
+pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
+    let case = vec![
         Case {
-            id: "15".into(),
-            case_name: case_title.into(),
-            case_number: case_number.into(),
-            court: "Eastern District of Michigan".into(),
-            date_filed: Utc.with_ymd_and_hms(2022, 5, 5, 0, 0, 0).unwrap(),
-            date_last_filing: Some(Utc.with_ymd_and_hms(2024, 3, 10, 0, 0, 0).unwrap()),
-            nature_of_suit: Some("Consumer Protection".into()),
-            jurisdiction_type: "Diversity".into(),
-            assigned_to: Some("Judge Lee".into()),
-            cause: Some("Product Liability".into()),
-            docket_number: "7056".into(),
-            status: "Open".into(),
+            id: 15,
+            case_number: "2:22-cv-12345".to_string(),
+            title: "Smith v. Tech Corp".to_string(),
+            status: "Open".to_string(),
+            filed_date: Utc::now(), // Use the actual filed_date from the database
+            closed_date: None,
+            court_id: 1,
+            current_court_id: 1,
+            judge_id: Some(1),
         },
     ];
 
-  
-    Ok(add_civil_case)
+    Ok(case)
 }
 
 
-#[component]
-pub fn CivilCaseForm() -> impl IntoView {
+#[island]
+pub fn AddCaseForm() -> impl IntoView {
     let add_case = create_server_action::<AddCase>();
     let value = add_case.value();
-    let has_error = move || value.with(|val| matches!(val, Some(Err(_))));
-    
-        view! {
-            <Wide_Layout>
-            <div class="flex justify-center items-center min-h-screen bg-gray-800 text-gray-400 p-6">
-            <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-4xl">
-                <h2 class="text-2xl font-semibold mb-6 text-center text-cyan-500 uppercase tracking-wider">"Open a New Federal Civil Case"</h2>
-                <ActionForm
-                    action=add_case
-                    class="space-y-6"
-                >
-                    // Case Information
-                    <fieldset class="border border-gray-700 p-4 rounded-md">
-                    <legend class="text-sm font-semibold text-cyan-500 uppercase tracking-wider px-2">"Case Information"</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="w-full">
-                        <InputField name="case_number" label="Case Number" required=true />
-                        </div>
-                        <InputField name="case_title" label="Case Title" required=true />
-                        <SelectField name="division" label="Division" required=true>
-                            <option value="">"Select Division"</option>
-                            <option value="central">"Central Division"</option>
-                            <option value="eastern">"Eastern Division"</option>
-                            <option value="western">"Western Division"</option>
-                        </SelectField>
-                        <SelectField name="case_type" label="Case Type" required=true>
-                            <option value="">"Select Case Type"</option>
-                            <option value="civil_rights">"Civil Rights"</option>
-                            <option value="contract">"Contract"</option>
-                            <option value="real_property">"Real Property"</option>
-                            <option value="tort">"Tort"</option>
-                            <option value="labor">"Labor"</option>
-                            <option value="immigration">"Immigration"</option>
-                            <option value="prisoner">"Prisoner Petition"</option>
-                            <option value="forfeiture">"Forfeiture/Penalty"</option>
-                            <option value="bankruptcy">"Bankruptcy"</option>
-                            <option value="ip">"Intellectual Property"</option>
-                            <option value="social_security">"Social Security"</option>
-                            <option value="tax">"Tax"</option>
-                            <option value="other">"Other"</option>
-                        </SelectField>
-                        <InputField name="filing_date" label="Filing Date" type_="date" required=true />
-                        <InputField name="jury_demand" label="Jury Demand" type_="checkbox" />
-                        <InputField name="demand" label="Demand ($)" type_="number" />
-                        <InputField name="related_cases" label="Related Case(s)" />
-                    </div>
-                </fieldset>
-    
-                        // Plaintiff Information
-                        <fieldset class="border border-gray-700 p-4 rounded-md">
-                        <legend class="text-sm font-semibold text-cyan-500 uppercase tracking-wider px-2">"Case Information"</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField name="plaintiff_name" label="Plaintiff Name" required=true />
-                                <InputField name="plaintiff_address" label="Plaintiff Address" required=true />
-                                <InputField name="plaintiff_phone" label="Plaintiff Phone" type_="tel" />
-                                <InputField name="plaintiff_email" label="Plaintiff Email" type_="email" />
-                            </div>
-                        </fieldset>
-    
-                        // Defendant Information
-                        <fieldset class="border border-gray-700 p-4 rounded-md">
-                        <legend class="text-sm font-semibold text-cyan-500 uppercase tracking-wider px-2">"Case Information"</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField name="defendant_name" label="Defendant Name" required=true />
-                                <InputField name="defendant_address" label="Defendant Address" required=true />
-                                <InputField name="defendant_phone" label="Defendant Phone" type_="tel" />
-                                <InputField name="defendant_email" label="Defendant Email" type_="email" />
-                            </div>
-                        </fieldset>
-    
-                        // Attorney Information
-                        <fieldset class="border border-gray-700 p-4 rounded-md">
-                        <legend class="text-sm font-semibold text-cyan-500 uppercase tracking-wider px-2">"Case Information"</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField name="attorney_name" label="Attorney Name" required=true />
-                                <InputField name="attorney_firm" label="Law Firm" />
-                                <InputField name="attorney_bar_number" label="Bar Number" required=true />
-                                <InputField name="attorney_phone" label="Phone" type_="tel" required=true />
-                                <InputField name="attorney_email" label="Email" type_="email" required=true />
-                            </div>
-                        </fieldset>
-    
-                        // Case Details
-                        <fieldset class="border border-gray-700 p-4 rounded-md">
-                        <legend class="text-sm font-semibold text-cyan-500 uppercase tracking-wider px-2">"Case Information"</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <TextareaField name="nature_of_suit" label="Nature of Suit" required=true />
-                                <TextareaField name="cause_of_action" label="Cause of Action" required=true />
-                                <TextareaField name="relief_sought" label="Relief Sought" required=true />
-                            </div>
-                        </fieldset>
-    
-                        <div>
-                        <input
-                            type="submit"
-                            value="File Case"
-                            class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-md font-medium cursor-pointer transition duration-200"
-                        />
-                    </div>
-    
-                    {move || if has_error() {
-                        view! {
-                            <p class="mt-2 text-sm text-red-400">
-                                "Error filing case. Please check your inputs and try again."
-                            </p>
-                        }
-                    } else {
-                        view! { <p></p> }
-                    }}
-                </ActionForm>
-            </div>
-            </div>
-            </Wide_Layout>
-        }
+
+    view! {
+        <div class="add-case-form">
+            <h2>"Add New Case"</h2>
+            <ActionForm action=add_case>
+                <div>
+                    <label for="case_number">"Case Number:"</label>
+                    <input type="text" id="case_number" name="case_number" required/>
+                </div>
+                <div>
+                    <label for="title">"Title:"</label>
+                    <input type="text" id="title" name="title" required/>
+                </div>
+                <div>
+                    <label for="status">"Status:"</label>
+                    <select id="status" name="status" required>
+                        <option value="Open">"Open"</option>
+                        <option value="Closed">"Closed"</option>
+                        <option value="Pending">"Pending"</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filed_date">"Filed Date:"</label>
+                    <input type="date" id="filed_date" name="filed_date" required/>
+                </div>
+                <div>
+                    <label for="closed_date">"Closed Date:"</label>
+                    <input type="date" id="closed_date" name="closed_date"/>
+                </div>
+                <div>
+                    <label for="court_name">"Court Name:"</label>
+                    <input type="text" id="court_name" name="court_name" required/>
+                </div>
+                <div>
+                    <label for="current_court_name">"Current Court Name:"</label>
+                    <input type="text" id="current_court_name" name="current_court_name" required/>
+                </div>
+                <div>
+                    <label for="judge_name">"Judge Name:"</label>
+                    <input type="text" id="judge_name" name="judge_name"/>
+                </div>
+                <button type="submit">"Add Case"</button>
+            </ActionForm>
+            <Show
+                when=move || add_case.pending().get()
+                fallback=|| view! { <div></div> }
+            >
+                <div>"Adding case..."</div>
+            </Show>
+            {move || value.get().map(|result| match result {
+                Ok(case_number) => view! { <div>"Case added successfully. Case number: " {case_number}</div> },
+                Err(_) => view! { <div>"Error adding case"</div> },
+            })}
+        </div>
     }
-    
-    #[component]
-    fn InputField(
-        name: &'static str,
-        label: &'static str,
-        #[prop(optional)] required: bool,
-        #[prop(optional)] type_: &'static str,
-    ) -> impl IntoView {
-        let input_type = if type_.is_empty() { "text" } else { type_ };
-        view! {
-            <div>
-                <label for={name} class="block text-sm font-medium mb-1 text-cyan-500">
-                    {label}
-                </label>
-                <input 
-                    type={input_type}
-                    id={name}
-                    name={name}
-                    required={required}
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white"
-                />
-            </div>
-        }
+}
+
+
+
+
+
+// Server-rendered component to display cases
+#[component]
+pub fn CaseList() -> impl IntoView {
+    let cases = create_resource(|| (), |_| get_cases());
+
+    view! {
+        <div class="case-list">
+            <h2>"Existing Cases"</h2>
+            <Suspense fallback=move || view! { <p>"Loading cases..."</p> }>
+                {move || cases.get().map(|result| match result {
+                    Ok(cases) => view! {
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>"Case Number"</th>
+                                    <th>"Title"</th>
+                                    <th>"Status"</th>
+                                    <th>"Filed Date"</th>
+                                    <th>"Court"</th>
+                                    <th>"Current Court"</th>
+                                    <th>"Judge"</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cases.into_iter().map(|case| view! {
+                                    <tr>
+                                        <td>{case.case_number}</td>
+                                        <td>{case.title}</td>
+                                        <td>{case.status}</td>
+                                        <td>{case.filed_date.to_string()}</td>
+                                        <td>{case.court_id}</td>
+                                        <td>{case.current_court_id}</td>
+                                        <td>{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
+                                    </tr>
+                                }).collect::<Vec<_>>()}
+                            </tbody>
+                        </table>
+                    }.into_view(),
+                    Err(_) => view! { <p>"Error loading cases"</p> }.into_view(),
+                }).unwrap_or_else(|| view! { <p>"No cases loaded yet"</p> }.into_view())}
+            </Suspense>
+            <AddCaseForm />
+        </div>
     }
-    
-    #[component]
-    fn SelectField(
-        name: &'static str,
-        label: &'static str,
-        required: bool,
-        children: Children,
-    ) -> impl IntoView {
-        view! {
-            <div>
-                <label for={name} class="block text-sm font-medium mb-1 text-cyan-500">
-                    {label}
-                </label>
-                <select
-                    id={name}
-                    name={name}
-                    required={required}
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white"
-                >
-                    {children()}
-                </select>
-            </div>
-        }
-    }
-    
-    #[component]
-    fn TextareaField(
-        name: &'static str,
-        label: &'static str,
-        required: bool,
-    ) -> impl IntoView {
-        view! {
-            <div>
-                <label for={name} class="block text-sm font-medium mb-1 text-cyan-500">
-                    {label}
-                </label>
-                <textarea
-                    id={name}
-                    name={name}
-                    required={required}
-                    rows="3"
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white"
-                ></textarea>
-            </div>
-        }
-    }
+}

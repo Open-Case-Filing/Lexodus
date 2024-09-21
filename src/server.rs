@@ -64,13 +64,14 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
 //     let _ = con.execute(sql, &[]);
 
 // Setup up Store for user sessions
-  let store = SqliteStore::from_connection(con.clone());
-  store.migrate().await.expect("Failed to migrate sessions!");
+  // let store = SqliteStore::from_connection(con.clone());
+  // store.migrate().await.expect("Failed to migrate sessions!");
 
     // Register server functions
     register_explicit::<crate::functions::save_count::SaveCount>();
     register_explicit::<crate::services::case_service::SearchCases>();
     register_explicit::<crate::pages::cases::AddCase>();
+    register_explicit::<crate::pages::cases::GetCases>();
 
     render_best_match_to_stream_with_context(
         req,

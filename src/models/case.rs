@@ -7,16 +7,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Case {
-    pub id: String,
-    pub case_name: String,
+    pub id: i64,
     pub case_number: String,
-    pub court: String,
-    pub date_filed: DateTime<Utc>,
-    pub date_last_filing: Option<DateTime<Utc>>,
-    pub nature_of_suit: Option<String>,
-    pub jurisdiction_type: String,
-    pub assigned_to: Option<String>,
-    pub cause: Option<String>,
-    pub docket_number: String,
+    pub title: String,
     pub status: String,
+    pub filed_date: DateTime<Utc>,
+    pub closed_date: Option<DateTime<Utc>>,
+    pub court_id: i64,
+    pub current_court_id: i64,
+    pub judge_id: Option<i64>,
 }
