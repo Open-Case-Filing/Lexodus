@@ -1,0 +1,598 @@
+-- User Role Distribution:
+SELECT r.name AS role, COUNT(u.id) AS user_count
+FROM users u
+JOIN roles r ON u.role_id = r.id
+GROUP BY r.name;
+
+-- Active Cases by Court:
+SELECT c.name AS court, COUNT(cs.id) AS active_cases
+FROM cases cs
+JOIN courts c ON cs.court_id = c.id
+WHERE cs.status = 'Active'
+GROUP BY c.name;
+
+-- Active Cases by Court and Judge:
+SELECT c.name AS court, COUNT(cs.id) AS active_cases
+FROM cases cs
+JOIN courts c ON cs.court_id = c.id
+WHERE cs.status = 'Active'
+GROUP BY c.name;
+
+-- Transfer Cases by Court:
+SELECT ct.case_id, fc.name AS from_court, tc.name AS to_court, ct.transfer_date, ct.transfer_reason
+FROM case_transfers ct
+JOIN courts fc ON ct.from_court_id = fc.id
+JOIN courts tc ON ct.to_court_id = tc.id
+ORDER BY ct.transfer_date DESC;
+
+-- Document filing trends
+SELECT DATE_TRUNC('month', filed_date) AS month, COUNT(id) AS documents_filed
+FROM documents
+GROUP BY month
+ORDER BY month;
+
+-- Judge appointment
+SELECT name, appointed_date, AGE(NOW(), appointed_date) AS tenure
+FROM judges;
+
+
+-- Case status Overview
+SELECT status, COUNT(id) AS case_count
+FROM cases
+GROUP BY status;
+
+-- Appeals Outcome
+SELECT outcome, COUNT(id) AS appeal_count
+FROM appeals
+GROUP BY outcome;
+
+-- User Activity logs
+SELECT u.username, al.action, al.action_date, al.details
+FROM activity_logs al
+JOIN users u ON al.user_id = u.id
+ORDER BY al.action_date DESC;
+
+
+-- Chatroom Participants
+SELECT cr.name AS chat_room, COUNT(cp.user_id) AS participants
+FROM chat_participants cp
+JOIN chat_rooms cr ON cp.chat_room_id = cr.id
+GROUP BY cr.name;
+
+-- Notification Read Status
+SELECT is_read, COUNT(id) AS notification_count
+FROM notifications
+GROUP BY is_read;
+
+
+-- Discovery Request Status
+SELECT status, COUNT(id) AS request_count
+FROM discovery
+GROUP BY status;
+
+--Motion Outcome Analysis:
+SELECT outcome, COUNT(id) AS motion_count
+FROM motions
+GROUP BY outcome;
+
+
+-- Pretrial Conference Schedule
+SELECT case_id, conference_date, location, description
+FROM pretrial_conferences
+WHERE conference_date > NOW()
+ORDER BY conference_date;
+
+
+-- Judgement Summary
+SELECT case_id, judgment_date, description
+FROM judgments
+ORDER BY judgment_date DESC;
+
+
+-- Fees payment record
+SELECT case_id, amount, payment_date, payment_method
+FROM fees_payments
+ORDER BY payment_date DESC;
+
+
+--------------------------------------------------
+-- USER FOCUS
+
+-- User Used Action by User
+SELECT u.username, ula.action_type, ula.last_used
+FROM user_last_actions ula
+JOIN users u ON ula.user_id = u.id
+ORDER BY ula.last_used DESC;
+
+-- Frequency of Each Action by User
+SELECT u.username, ufa.action_type, ufa.frequency
+FROM user_frequent_actions ufa
+JOIN users u ON ufa.user_id = u.id
+ORDER BY ufa.frequency DESC;
+
+
+-- Chat Usage Related to Case Documents:
+SELECT d.title AS document_title, cr.name AS chat_room, COUNT(m.id) AS message_count
+FROM messages m
+JOIN chat_rooms cr ON m.chat_room_id = cr.id
+JOIN case_documents cd ON cr.case_id = cd.case_id
+JOIN documents d ON cd.document_id = d.id
+GROUP BY d.title, cr.name
+ORDER BY message_count DESC;
+
+
+-- Users most recent activity
+SELECT u.username, al.action, al.action_date
+FROM activity_logs al
+JOIN users u ON al.user_id = u.id
+WHERE al.action_date = (
+  SELECT MAX(action_date)
+  FROM activity_logs
+  WHERE user_id = u.id
+)
+ORDER BY al.action_date DESC;
+
+
+-- User Participation in Chat Rooms:
+
+SELECT u.username, cr.name AS chat_room, COUNT(cp.id) AS participation_count
+FROM chat_participants cp
+JOIN users u ON cp.user_id = u.id
+JOIN chat_rooms cr ON cp.chat_room_id = cr.id
+GROUP BY u.username, cr.name
+ORDER BY participation_count DESC;
+
+
+---------
+-- CASE INFORMATION
+
+-- Create a New Case:
+
+INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id)
+VALUES ('[case_number]', '[title]', 'Open', '[filed_date]', [court_id], [current_court_id], [judge_id]);
+
+
+-- Update Case Status:
+UPDATE cases
+SET title = '[new_title]', status = '[new_status]', closed_date = '[closed_date]', updated_at = NOW()
+WHERE case_number = '[case_number]';
+
+-- Assign a Court to a Case:
+UPDATE cases
+SET court_id = [new_court_id], current_court_id = [new_court_id], updated_at = NOW()
+WHERE case_number = '[case_number]';
+
+
+-- Assign a Judge to a Case:
+
+UPDATE cases
+SET judge_id = [new_judge_id], updated_at = NOW()
+WHERE case_number = '[case_number]';
+
+-- File a motion
+INSERT INTO motions (case_id, motion_type, filed_date, status)
+SELECT id, '[motion_type]', '[filed_date]', 'Pending'
+FROM cases
+WHERE case_number = '[case_number]';
+
+
+-- Record a hearing
+INSERT INTO hearings (case_id, hearing_date, location, description)
+SELECT id, '[hearing_date]', '[location]', '[description]'
+FROM cases
+WHERE case_number = '[case_number]';
+
+-- Transfer a case to another court
+INSERT INTO case_transfers (case_id, from_court_id, to_court_id, transfer_date, transfer_reason)
+SELECT id, current_court_id, [new_court_id], NOW(), '[transfer_reason]'
+FROM cases
+WHERE case_number = '[case_number]';
+
+
+-- Add a Document to a Case:
+UPDATE cases
+SET current_court_id = [new_court_id], updated_at = NOW()
+WHERE case_number = '[case_number]';
+
+-- Add a Document to a Case:
+INSERT INTO documents (case_id, title, file_path, filed_date)
+SELECT id, '[document_title]', '[file_path]', '[filed_date]'
+FROM cases
+WHERE case_number = '[case_number]';
+
+-- Log Activity
+INSERT INTO activity_logs (user_id, action, details)
+VALUES ([user_id], '[action]', '[details]');
+
+
+-- Schedule a pretrial confernce
+INSERT INTO pretrial_conferences (case_id, conference_date, location, description)
+SELECT id, '[conference_date]', '[location]', '[description]'
+FROM cases
+WHERE case_number = '[case_number]';
+
+
+--- Document Features
+
+-- Insert documents
+INSERT INTO documents (case_id, title, file_path, filed_date) SELECT
+id, 'Complaint', '/documents/1:20-cv-03010/complaint.pdf', '2020-10-20'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert document versions
+INSERT INTO document_versions (document_id, version_number, file_path) SELECT
+id, 1, '/documents/1:20-cv-03010/complaint_v1.pdf'
+FROM documents WHERE title = 'Complaint'
+ON CONFLICT DO NOTHING;
+
+-- Insert hearings
+INSERT INTO hearings (case_id, hearing_date, location, description) SELECT
+id, '2021-02-15 10:00:00', 'New York City Courthouse', 'Initial Hearing'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert pretrial conferences
+INSERT INTO pretrial_conferences (case_id, conference_date, location, description) SELECT
+id, '2021-03-01 10:00:00', 'New York City Courthouse', 'Pretrial Conference'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert parties
+INSERT INTO parties (case_id, name, role, attorney_id) SELECT
+id, 'Google LLC', 'Defendant', (SELECT id FROM users WHERE username = 'nkatyal')
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert dockets
+INSERT INTO dockets (case_id, entry_date, description, document_id) SELECT
+id, '2020-10-20', 'Complaint filed', (SELECT id FROM documents WHERE title = 'Complaint')
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert motions
+INSERT INTO motions (case_id, motion_type, filed_date, status) SELECT
+id, 'Motion to Dismiss', '2020-11-01', 'Pending'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert pleadings
+INSERT INTO pleadings (case_id, pleading_type, filed_date, status) SELECT
+id, 'Answer', '2020-11-15', 'Filed'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert appeals
+INSERT INTO appeals (case_id, appeal_date, appellate_court, outcome) SELECT
+id, '2021-01-15', 'U.S. Supreme Court', 'Pending'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert judgments
+INSERT INTO judgments (case_id, judgment_date, description) SELECT
+id, '2021-06-01', 'Judgment issued by Supreme Court'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+
+-- Insert activity logs
+INSERT INTO activity_logs (user_id, action, details) SELECT
+id, 'Filed Document', 'Filed Complaint for case 1:20-cv-03010'
+FROM users WHERE username = 'nkatyal'
+ON CONFLICT DO NOTHING;
+
+-- Insert user actions
+INSERT INTO user_actions (user_id, action_type, details) SELECT
+id, 'View Case', 'Viewed case 1:20-cv-03010'
+FROM users WHERE username = 'jroberts'
+ON CONFLICT DO NOTHING;
+
+-- Insert tasks
+INSERT INTO tasks (case_id, assigned_to, task_description, due_date, status) SELECT
+id, (SELECT id FROM users WHERE username = 'ckagan'), 'Prepare case materials', '2021-02-01', 'Pending'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert notifications
+INSERT INTO notifications (user_id, message) SELECT
+id, 'New document filed in case 1:20-cv-03010'
+FROM users WHERE username = 'jroberts'
+ON CONFLICT DO NOTHING;
+
+-- Chat and Communication
+-- Insert chat rooms
+INSERT INTO chat_rooms (case_id, name) SELECT
+id, 'Google LLC Discussion'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert messages
+INSERT INTO messages (chat_room_id, user_id, content) SELECT
+id, (SELECT id FROM users WHERE username = 'nkatyal'), 'Has everyone reviewed the latest document?'
+FROM chat_rooms WHERE name = 'Google LLC Discussion'
+ON CONFLICT DO NOTHING;
+
+-- Insert chat participants
+INSERT INTO chat_participants (chat_room_id, user_id) SELECT
+id, (SELECT id FROM users WHERE username = 'jroberts')
+FROM chat_rooms WHERE name = 'Google LLC Discussion'
+ON CONFLICT DO NOTHING;
+
+
+-- Insert discovery requests
+INSERT INTO discovery (case_id, request_type, request_date, response_date, status) SELECT
+id, 'Request for Production', '2020-11-01', '2020-12-01', 'Completed'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+-- Insert scheduling orders
+INSERT INTO scheduling_orders (case_id, order_date, description, deadline) SELECT
+id, '2020-10-25', 'Deadline for Motion to Dismiss', '2020-11-01'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+
+-- Insert fees and payments
+INSERT INTO fees_payments (case_id, amount, payment_date, payment_method) SELECT
+id, 500.00, '2020-10-20', 'Credit Card'
+FROM cases WHERE case_number = '1:20-cv-03010'
+ON CONFLICT DO NOTHING;
+
+
+-- Refresh materialized view
+REFRESH MATERIALIZED VIEW cases_summary;
+
+
+------ SEARCHING
+-- Full-Text Search for Cases:
+
+--Implement full-text search capabilities to allow users to search for cases by keywords in case titles, descriptions, or documents.
+CREATE INDEX idx_cases_title ON cases USING gin (to_tsvector('simple', title));
+
+SELECT id, case_number, title
+FROM cases
+WHERE to_tsvector('simple', title) @@ to_tsquery('simple', 'Google & LLC');
+
+
+-- Search by Party or Attorney:
+
+-- Allow users to search for cases involving specific parties or attorneys.
+SELECT c.id, c.case_number, c.title
+FROM cases c
+JOIN parties p ON c.id = p.case_id
+WHERE p.name ILIKE '%Trump%';
+Filter Cases by Date Range:
+
+-- Enable filtering of cases based on filing or closing dates.
+SELECT id, case_number, title
+FROM cases
+WHERE filed_date BETWEEN '2020-01-01' AND '2020-12-31';
+Advanced Case Filtering:
+
+-- Implement filters for case status, court, judge, and more.
+SELECT id, case_number, title
+FROM cases
+WHERE status = 'Open' AND court_id = (SELECT id FROM courts WHERE name = 'U.S. Supreme Court');
+Search Documents by Content:
+
+-- If document content is stored in the database, implement full-text search for document contents.
+CREATE INDEX idx_documents_content ON documents USING gin (to_tsvector('simple', content));
+
+SELECT id, title, file_path
+FROM documents
+WHERE to_tsvector('simple', content) @@ to_tsquery('simple', 'brief');
+Search and Filter Motions and Pleadings:
+
+-- Allow users to search and filter motions and pleadings by type, status, or outcome.
+SELECT id, motion_type, filed_date, status
+FROM motions
+WHERE motion_type ILIKE '%Dismiss%' AND status = 'Pending';
+Search by Hearing or Conference Details:
+
+-- Enable search for hearings or conferences by date, location, or description.
+SELECT id, hearing_date, location, description
+FROM hearings
+WHERE location ILIKE '%New York%';
+Search and Filter by Fees and Payments:
+
+-- Allow users to search and filter fees and payments by amount, date, or method.
+SELECT id, amount, payment_date, payment_method
+FROM fees_payments
+WHERE amount > 100.00;
+Search User Activities and Logs:
+
+-- Implement search capabilities for user activities and logs to monitor actions and changes.
+SELECT id, action, action_date, details
+FROM activity_logs
+WHERE action ILIKE '%Filed%';
+
+
+--Search Chat Messages:
+
+Allow users to search chat messages by content or participant.
+SELECT id, content, sent_at
+FROM messages
+WHERE content ILIKE '%reviewed%';
+
+
+-- Docket
+SELECT
+    c.case_number,
+    c.title AS case_title,
+    c.status AS case_status,
+    c.filed_date,
+    c.closed_date,
+    crt.name AS court_name,
+    j.name AS judge_name,
+    p.name AS party_name,
+    p.role AS party_role,
+    u.username AS attorney_username,
+    d.entry_date AS docket_entry_date,
+    d.description AS docket_description,
+    doc.title AS document_title,
+    doc.file_path AS document_path,
+    h.hearing_date,
+    h.location AS hearing_location,
+    h.description AS hearing_description,
+    m.motion_type,
+    m.filed_date AS motion_filed_date,
+    m.status AS motion_status,
+    m.outcome AS motion_outcome,
+    a.appeal_date,
+    a.appellate_court,
+    a.outcome AS appeal_outcome,
+    jg.judgment_date,
+    jg.description AS judgment_description
+FROM
+    dockets d
+JOIN
+    cases c ON d.case_id = c.id
+LEFT JOIN
+    courts crt ON c.court_id = crt.id
+LEFT JOIN
+    judges j ON c.judge_id = j.id
+LEFT JOIN
+    parties p ON c.id = p.case_id
+LEFT JOIN
+    users u ON p.attorney_id = u.id
+LEFT JOIN
+    documents doc ON d.document_id = doc.id
+LEFT JOIN
+    hearings h ON c.id = h.case_id
+LEFT JOIN
+    motions m ON c.id = m.case_id
+LEFT JOIN
+    appeals a ON c.id = a.case_id
+LEFT JOIN
+    judgments jg ON c.id = jg.case_id
+WHERE
+    c.case_number = '[specific_case_number]'
+ORDER BY
+    d.entry_date;
+
+
+--- Docket sheet
+SELECT
+    'Document' AS entry_type,
+    d.filed_date AS entry_date,
+    d.title AS description,
+    d.file_path AS document_path,
+    NULL AS hearing_date,
+    NULL AS hearing_location,
+    NULL AS motion_type,
+    NULL AS order_description,
+    NULL AS judgment_description,
+    NULL AS transfer_date,
+    NULL AS transfer_reason
+FROM
+    documents d
+WHERE
+    d.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+UNION ALL
+
+SELECT
+    'Hearing' AS entry_type,
+    h.hearing_date AS entry_date,
+    h.description AS description,
+    NULL AS document_path,
+    h.hearing_date,
+    h.location,
+    NULL AS motion_type,
+    NULL AS order_description,
+    NULL AS judgment_description,
+    NULL AS transfer_date,
+    NULL AS transfer_reason
+FROM
+    hearings h
+WHERE
+    h.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+UNION ALL
+
+SELECT
+    'Motion' AS entry_type,
+    m.filed_date AS entry_date,
+    m.motion_type AS description,
+    NULL AS document_path,
+    NULL AS hearing_date,
+    NULL AS hearing_location,
+    m.motion_type,
+    NULL AS order_description,
+    NULL AS judgment_description,
+    NULL AS transfer_date,
+    NULL AS transfer_reason
+FROM
+    motions m
+WHERE
+    m.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+UNION ALL
+
+SELECT
+    'Scheduling Order' AS entry_type,
+    so.order_date AS entry_date,
+    so.description AS description,
+    NULL AS document_path,
+    NULL AS hearing_date,
+    NULL AS hearing_location,
+    NULL AS motion_type,
+    so.description AS order_description,
+    NULL AS judgment_description,
+    NULL AS transfer_date,
+    NULL AS transfer_reason
+FROM
+    scheduling_orders so
+WHERE
+    so.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+UNION ALL
+
+SELECT
+    'Judgment' AS entry_type,
+    j.judgment_date AS entry_date,
+    j.description AS description,
+    NULL AS document_path,
+    NULL AS hearing_date,
+    NULL AS hearing_location,
+    NULL AS motion_type,
+    NULL AS order_description,
+    j.description AS judgment_description,
+    NULL AS transfer_date,
+    NULL AS transfer_reason
+FROM
+    judgments j
+WHERE
+    j.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+UNION ALL
+
+SELECT
+    'Case Transfer' AS entry_type,
+    ct.transfer_date AS entry_date,
+    ct.transfer_reason AS description,
+    NULL AS document_path,
+    NULL AS hearing_date,
+    NULL AS hearing_location,
+    NULL AS motion_type,
+    NULL AS order_description,
+    NULL AS judgment_description,
+    ct.transfer_date,
+    ct.transfer_reason
+FROM
+    case_transfers ct
+WHERE
+    ct.case_id = (SELECT id FROM cases WHERE case_number = '1:19-cv-03472')
+
+ORDER BY
+    entry_date ASC;
+
+
+-- List all Appeals for a specific case
+SELECT cases.case_number, appeals.appeal_date, appeals.appellate_court, appeals.outcome
+FROM cases
+JOIN appeals ON cases.id = appeals.case_id
+WHERE appeals.outcome = 'Reversed';
+
+-- List all appeals where appeals were reversed
+SELECT * FROM appeals WHERE case_id = 1;
