@@ -1,4 +1,4 @@
-use crate::session::SqliteStore;
+
 use leptos::provide_context;
 use leptos_spin::{
     render_best_match_to_stream_with_context, server_fn::register_explicit, RouteTable,
@@ -18,8 +18,11 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     // let dev_value = variables::get("dev_value").unwrap();
     let db_url = variables::get("db_url").unwrap();
     // let response = format!(
-    //     "Hello, world! Token: {}, DEV_VALUE: {}, DB_URL: {}",
-    //     token, dev_value, db_url
+    //     "Hello, world!
+    //     DB_URL: {}",
+    //     // token,
+    //     // dev_value,
+    //     db_url
     // );
     // println!("Configuration: {}", response);
 
@@ -72,6 +75,7 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     register_explicit::<crate::services::case_service::SearchCases>();
     register_explicit::<crate::pages::cases::AddCase>();
     register_explicit::<crate::pages::cases::GetCases>();
+
 
     render_best_match_to_stream_with_context(
         req,
