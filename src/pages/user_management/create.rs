@@ -83,11 +83,24 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 }
 
 
+#[component]
+pub fn UserManagement() -> impl IntoView {
+    view! {
+        <UserList />
+        <AddUserForm />
+    }
+}
+
 #[island]
 pub fn AddUserForm() -> impl IntoView {
     let add_user = create_server_action::<AddUser>();
     let value = add_user.value();
-
+    // spawn_local(async move {
+    //     match add_user().await {
+    //         Ok(fetched_users) => set_users.set(Ok(fetched_users)),
+    //         Err(e) => set_users.set(Err(e)),
+    //     }
+    // });
     view! {
         <ErrorBoundary
             fallback=|errors| view! {
@@ -140,7 +153,16 @@ pub fn AddUserForm() -> impl IntoView {
 
 #[component]
 pub fn UserList() -> impl IntoView {
-    let users = create_resource(|| (), |_| get_users());
+  let (refresh_trigger, set_refresh_trigger) = create_signal(0);
+
+  let users = create_resource(
+      move || refresh_trigger.get(),
+      |_| async move {
+          logging::log!("loading data from /users/GetUsers");
+          get_users().await
+      },
+  );
+
 
     view! {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
@@ -168,7 +190,6 @@ pub fn UserList() -> impl IntoView {
                     </tbody>
                 </table>
             </div>
-            <AddUserForm />
         </div>
     }
 }

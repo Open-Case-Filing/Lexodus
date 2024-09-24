@@ -26,7 +26,7 @@ pub fn App() -> impl IntoView {
             <Route path="/case/add" view=CaseList/>
             <Route path="/changelog" view=Changelog/>
             <Route path="/case/activity" view=Activity/>
-            <Route path="/user-management/create" view=UserList/>
+            <Route path="/user-management" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
           </Routes>
         </main>
