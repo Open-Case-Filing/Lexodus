@@ -12,6 +12,7 @@ pub fn Nav() -> impl IntoView {
                     <NavLink url="/dashboard/overview" icon_type="dashboard" label="Dashboard" />
                     <NavLink url="/case/add" icon_type="cases" label="Cases" />
                     <NavLink url="/case/activity" icon_type="cases" label="Case Activity" />
+                    <NavLink url="/user-management/create" icon_type="signup" label="Sign up" />
                     // <NavLink url="/documents/activity" icon_type="documents" label="Documents" />
                     // <NavLink url="/scheduling/activity" icon_type="scheduling" label="Scheduling" />
                     // <NavLink url="/reports/activity" icon_type="reports" label="Reports & Analytics" />

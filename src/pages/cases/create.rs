@@ -1,4 +1,4 @@
-use anyhow::Result;
+
 use leptos::*;
 use leptos_router::ActionForm;
 
@@ -9,7 +9,7 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "ssr")] {
         use spin_sdk::pg::{Connection, ParameterValue};
-        use spin_sdk::variables;
+        use spin_sdk::{variables};
         use chrono::Utc;
 
     }
@@ -152,37 +152,52 @@ pub fn CaseList() -> impl IntoView {
     view! {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Cases"</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 text-left text-gray-400">"Case Number"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Title"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Status"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Filed Date"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Court"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Current Court"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Judge"</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {move || cases.get().map(|result| match result {
-                            Ok(cases) => cases.into_iter().map(|case| view! {
-                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.filed_date.to_string()}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
-                                </tr>
-                            }).collect_view(),
-                            Err(_) => view! { <tr><td colspan="7" class="text-center text-red-400">"Error loading cases"</td></tr> }.into_view(),
-                        })}
-                    </tbody>
-                </table>
-            </div>
+            <ErrorBoundary
+                fallback=|errors| view! {
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">"Error loading cases: "</strong>
+                        <ul class="list-disc list-inside">
+                            {move || errors.get()
+                                .into_iter()
+                                .map(|(_, e)| view! { <li>{e.to_string()}</li>})
+                                .collect_view()
+                            }
+                        </ul>
+                    </div>
+                }
+            >
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-2 text-left text-gray-400">"Case Number"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Title"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Status"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Filed Date"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Court"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Current Court"</th>
+                                <th class="px-4 py-2 text-left text-gray-400">"Judge"</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {move || cases.get().map(|result| match result {
+                                Ok(cases) => cases.into_iter().map(|case| view! {
+                                    <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.filed_date.to_string()}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
+                                    </tr>
+                                }).collect_view(),
+                                Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </ErrorBoundary>
             <AddCaseForm />
         </div>
     }

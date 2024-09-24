@@ -4,6 +4,7 @@ use leptos_router::*;
 
 use crate::pages::activity::Activity;
 use crate::pages::cases::*;
+use crate::pages::user_management::*;
 use crate::pages::changelog::Changelog;
 use crate::pages::homepage::HomePage;
 use crate::pages::login::Login;
@@ -25,6 +26,7 @@ pub fn App() -> impl IntoView {
             <Route path="/case/add" view=CaseList/>
             <Route path="/changelog" view=Changelog/>
             <Route path="/case/activity" view=Activity/>
+            <Route path="/user-management/create" view=UserList/>
             <Route path="/*any" view=NotFound/>
           </Routes>
         </main>

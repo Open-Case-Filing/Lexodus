@@ -75,7 +75,8 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     register_explicit::<crate::services::case_service::SearchCases>();
     register_explicit::<crate::pages::cases::AddCase>();
     register_explicit::<crate::pages::cases::GetCases>();
-
+    register_explicit::<crate::pages::user_management::AddUser>();
+    register_explicit::<crate::pages::user_management::GetUsers>();
 
     render_best_match_to_stream_with_context(
         req,
