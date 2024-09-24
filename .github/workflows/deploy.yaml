@@ -34,7 +34,7 @@ jobs:
         run: cargo binstall cargo-component --no-confirm
 
       - name: Install wasm-bindgen
-        run: cargo binstall wasm-bindgen-cli --no-confirm
+        run: cargo install wasm-bindgen-cli --no-confirm
 
       - name: Install cargo-leptos
         run: cargo binstall cargo-leptos --no-confirm
@@ -51,4 +51,3 @@ jobs:
             db_url=${{ secrets.DB_URL }}
             turso_token=${{ secrets.TURSO_TOKEN }}
             turso_url=${{ secrets.TURSO_URL }}
-

@@ -78,7 +78,7 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
             }
         })
         .collect();
-  leptos_axum::redirect("/");
+
     Ok(users)
 }
 
