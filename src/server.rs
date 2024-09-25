@@ -7,6 +7,7 @@ use spin_sdk::http::{IncomingRequest, ResponseOutparam};
 use spin_sdk::pg::{self};
 use spin_sdk::{http_component, variables};
 use std::sync::Arc;
+use dotenv::dotenv;
 
 
 
@@ -25,6 +26,7 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     //     db_url
     // );
     // println!("Configuration: {}", response);
+    dotenv().ok();
 
     // register_explicit::<crate::pages::cases::UpdateCount>();
     let app_router = crate::app::App;

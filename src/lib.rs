@@ -1,10 +1,10 @@
-mod app;
-mod components;
-mod functions;
-mod layouts;
-mod models;
-mod pages;
-mod services;
+pub mod app;
+pub mod domain;
+pub mod application;
+pub mod infrastructure;
+pub mod presentation;
+pub use application::services::case_services::create_case;
+pub use domain::models::Case;
 
 #[cfg(feature = "ssr")]
 mod server;
