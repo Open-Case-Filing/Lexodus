@@ -1,8 +1,11 @@
 
 use leptos::*;
 use leptos_router::ActionForm;
-
-use crate::models::case::Case;
+use serde::{Deserialize, Serialize};
+use crate::layouts::default::*;
+use leptos_meta::Meta;
+use leptos_meta::Title;
+// use crate::models::case::Case;
 
 use cfg_if::cfg_if;
 
@@ -10,13 +13,24 @@ cfg_if! {
     if #[cfg(feature = "ssr")] {
         use spin_sdk::pg::{Connection, ParameterValue};
         use spin_sdk::{variables};
-        use chrono::Utc;
+        use spin_sdk::pg::*;
 
     }
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Case {
+    case_number: String,
+    title: String,
+    status: String,
+    filed_date: String,
+    closed_date: Option<String>,
+    court_id: i64,
+    current_court_id: i64,
+    judge_id: Option<i64>,
+}
 
-#[server(AddCase, "/api")]
-pub async fn add_case(
+#[server(CreateCase, "/api")]
+pub async fn create_case(
     case_number: String,
     title: String,
     status: String,
@@ -59,34 +73,69 @@ pub async fn add_case(
 
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
-    let case = vec![
-        Case {
-            id: 15,
-            case_number: "2:22-cv-12345".to_string(),
-            title: "Smith v. Tech Corp".to_string(),
-            status: "Open".to_string(),
-            filed_date: Utc::now(), // Use the actual filed_date from the database
-            closed_date: None,
-            court_id: 1,
-            current_court_id: 1,
-            judge_id: Some(1),
-        },
-    ];
+  let db_url = variables::get("db_url").unwrap();
+  let conn = Connection::open(&db_url)?;
 
-    Ok(case)
+  let sql = "SELECT case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id FROM cases";
+
+  let rowset = conn.query(sql, &[])?;
+  let cases: Vec<Case> = rowset
+      .rows
+      .iter()
+      .map(|row| {
+          Case {
+              case_number: match &row[0] {
+                  DbValue::Str(case_number) => case_number.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              title: match &row[1] {
+                  DbValue::Str(title) => title.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              status: match &row[2] {
+                  DbValue::Str(status) => status.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              filed_date: match &row[3] {
+                  DbValue::Str(filed_date) => filed_date.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              closed_date: match &row[4] {
+                  DbValue::Str(closed_date) => Some(closed_date.clone()),
+                  DbValue::DbNull => None,
+                  _ => None, // Default to None if not a String or Null
+              },
+              court_id: match &row[5] {
+                  DbValue::Int64(court_id) => *court_id,
+                  _ => 0, // Default value if not an Int64
+              },
+              current_court_id: match &row[6] {
+                  DbValue::Int64(current_court_id) => *current_court_id,
+                  _ => 0, // Default value if not an Int64
+              },
+              judge_id: match &row[7] {
+                  DbValue::Int64(judge_id) => Some(*judge_id),
+                  DbValue::DbNull => None,
+                  _ => None, // Default to None if not an Int64 or Null
+              },
+          }
+      })
+      .collect();
+
+  Ok(cases)
+
 }
 
 
 #[island]
-pub fn AddCaseForm() -> impl IntoView {
-    let add_case = create_server_action::<AddCase>();
-    let value = add_case.value();
+pub fn CreateCaseForm() -> impl IntoView {
+    let create_case = create_server_action::<CreateCase>();
+    let value = create_case.value();
 
     view! {
-
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New Case"</h3>
-            <ActionForm action=add_case>
+            <ActionForm action=create_case>
                 <div class="mb-4">
                     <label for="case_number" class="block text-gray-400 mb-1">"Case Number:"</label>
                     <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
@@ -126,7 +175,7 @@ pub fn AddCaseForm() -> impl IntoView {
                 <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add Case"</button>
             </ActionForm>
             <Show
-                when=move || add_case.pending().get()
+                when=move || create_case.pending().get()
                 fallback=|| view! { <div></div> }
             >
                 <div class="mt-4 text-gray-400">"Adding case..."</div>
@@ -136,7 +185,6 @@ pub fn AddCaseForm() -> impl IntoView {
                 Err(_) => view! { <div class="mt-4 text-red-400">"Error adding case"</div> },
             })}
         </div>
-
     }
 }
 
@@ -180,25 +228,54 @@ pub fn CaseList() -> impl IntoView {
                             </tr>
                         </thead>
                         <tbody>
-                            {move || cases.get().map(|result| match result {
-                                Ok(cases) => cases.into_iter().map(|case| view! {
+                        {move || cases.get().map(|result| match result {
+                            Ok(cases) => cases.into_iter().map(|case| {
+                                let case = case.clone(); // Clone the case here if necessary
+                                view! {
                                     <tr class="hover:bg-cyan-100 hover:text-gray-900">
                                         <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
                                         <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
                                         <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.filed_date.to_string()}</td>
+                                        <td class="border-t border-gray-700 px-4 py-2">{case.filed_date}</td>
                                         <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
                                         <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
                                         <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
                                     </tr>
-                                }).collect_view(),
-                                Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
-                            })}
+                                }
+                            }).collect_view(),
+                            Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
+                        })}
+
                         </tbody>
                     </table>
                 </div>
             </ErrorBoundary>
-            <AddCaseForm />
+
         </div>
+    }
+}
+
+
+#[component]
+pub fn CaseManagement() -> impl IntoView {
+    view! {
+        <Meta property="og:title" content="Case Management | Open Case Filing System"/>
+        <Title text="Case Management | Open Case Filing System"/>
+        <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
+        <Meta property="og:description" content="Add new cases and view existing cases in the Open Case Filing System."/>
+        <Default_Layout>
+            <div class="w-full md:w-3/4 p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-semibold">"Case Management"</h2>
+                </div>
+
+                <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-4 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mb-8">
+
+                     <CaseList />
+                    <CreateCaseForm />
+                </div>
+
+            </div>
+        </Default_Layout>
     }
 }

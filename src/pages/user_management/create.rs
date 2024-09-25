@@ -1,6 +1,9 @@
 use leptos::*;
 use leptos_router::ActionForm;
+use leptos_meta::Meta;
+use leptos_meta::Title;
 use serde::{Deserialize, Serialize};
+use crate::layouts::default::*;
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -18,8 +21,8 @@ pub struct User {
     pub role_id: i64,
 }
 
-#[server(AddUser, "/api")]
-pub async fn add_user(
+#[server(CreateUser, "/api")]
+pub async fn create_user(
     username: String,
     password: String,
     role_id: i64,
@@ -83,20 +86,14 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 }
 
 
-#[component]
-pub fn UserManagement() -> impl IntoView {
-    view! {
-        <UserList />
-        <AddUserForm />
-    }
-}
+
 
 #[island]
-pub fn AddUserForm() -> impl IntoView {
-    let add_user = create_server_action::<AddUser>();
-    let value = add_user.value();
+pub fn CreateUserForm() -> impl IntoView {
+    let create_user = create_server_action::<CreateUser>();
+    let value = create_user.value();
     // spawn_local(async move {
-    //     match add_user().await {
+    //     match create_user().await {
     //         Ok(fetched_users) => set_users.set(Ok(fetched_users)),
     //         Err(e) => set_users.set(Err(e)),
     //     }
@@ -118,7 +115,7 @@ pub fn AddUserForm() -> impl IntoView {
         >
             <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
                 <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
-                <ActionForm action=add_user>
+                <ActionForm action=create_user>
 
                 <div class="mb-4">
                     <label for="username" class="block text-gray-400 mb-1">"Username:"</label>
@@ -135,7 +132,7 @@ pub fn AddUserForm() -> impl IntoView {
                 <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add User"</button>
                 </ActionForm>
                  <Show
-                     when=move || add_user.pending().get()
+                     when=move || create_user.pending().get()
                      fallback=|| view! { <div></div> }
                  >
                      <div class="mt-4 text-gray-400">"Adding user..."</div>
@@ -153,7 +150,7 @@ pub fn AddUserForm() -> impl IntoView {
 
 #[component]
 pub fn UserList() -> impl IntoView {
-  let (refresh_trigger, set_refresh_trigger) = create_signal(0);
+  let (refresh_trigger, _set_refresh_trigger) = create_signal(0);
 
   let users = create_resource(
       move || refresh_trigger.get(),
@@ -163,9 +160,11 @@ pub fn UserList() -> impl IntoView {
       },
   );
 
+  let (user_trigger, _set_user_trigger) = create_signal(users.get());
 
     view! {
-        <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
+
+        <div class="w-full bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
@@ -177,7 +176,7 @@ pub fn UserList() -> impl IntoView {
                         </tr>
                     </thead>
                     <tbody>
-                        {move || users.get().map(|result| match result {
+                        {move || user_trigger.get().map(|result| match result {
                             Ok(users) => users.into_iter().map(|user| view! {
                                 <tr class="hover:bg-cyan-100 hover:text-gray-900">
                                     <td class="border-t border-gray-700 px-4 py-2">{user.id}</td>
@@ -191,5 +190,27 @@ pub fn UserList() -> impl IntoView {
                 </table>
             </div>
         </div>
+
+    }
+}
+#[component]
+pub fn UserManagement() -> impl IntoView {
+    view! {
+        <Meta property="og:title" content="User Management | Open Case Filing System"/>
+        <Title text="User Management | Open Case Filing System"/>
+        <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
+        <Meta property="og:description" content="Manage users, roles, and permissions in the Open Case Filing System."/>
+        <Default_Layout>
+            <div class="w-full md:w-3/4 p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-semibold">"User Management"</h2>
+                </div>
+                <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-4 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mb-8">
+
+                           <UserList />
+                           <CreateUserForm />
+                </div>
+            </div>
+        </Default_Layout>
     }
 }
