@@ -3,11 +3,8 @@ use leptos::*;
 #[component]
 pub fn Nav() -> impl IntoView {
     view! {
-        <aside id="nav" class="w-full lg:w-64 bg-gray-800 h-full text-white min-w-[250px]">
-            <div class="p-4 text-center">
-                <h2 href="/" class="text-2xl font-semibold ">Home</h2>
-            </div>
-            <div class="p-4 rounded-lg shadow-lg w-full max-w-4xl mx-auto">
+        <aside id="nav" class="w-full lg:w-64 bg-gray-800 h-full text-white max-w-[48px]">
+            <div class="rounded-lg shadow-lg w-full max-w-4xl mx-auto">
                 <nav class="flex flex-col space-y-4 text-white text-sm">
                     <NavLink url="/dashboard/overview" icon_type="dashboard" label="Dashboard" />
                     <NavLink url="/case-management" icon_type="cases" label="Case Management" />
@@ -131,7 +128,7 @@ pub fn NavLink(url: &'static str, icon_type: &'static str, label: &'static str) 
     view! {
         <a rel="external" href={url} class="flex items-center text-gray-400 hover:text-white">
             <span inner_html={icon_svg}></span>
-            {label}
+            // {label}
         </a>
     }
 }

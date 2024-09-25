@@ -9,7 +9,7 @@ pub fn RecentCaseActivity() -> impl IntoView {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Recent Case Activity"</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-gray-800 hover:table-fixed">
+                <table class="min-wa-full bg-gray-800 hover:table-fixed">
                     <thead>
                         <tr>
                             <th class="px-4 py-2 text-left text-gray-400">"Case Name"</th>

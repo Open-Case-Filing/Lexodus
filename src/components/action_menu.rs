@@ -6,8 +6,12 @@ pub fn Action_Menu() -> impl IntoView {
     let data = create_resource(|| (), |_| async move { get_action_menu_data().await });
 
     view! {
-        <div class="w-full md:w-1/4 lg:w-1/5 bg-gray-800 p-4 hidden md:block min-w-[250px]" id="sidebar">
-            <div class="mt-8 space-y-6 mr-2">
+      <div class="w-64 h-full bg-gray-800 p-4 overflow-y-auto flex-shrink-0 border-l border-r border-gray-700">
+          <div class="space-y-4">
+
+
+
+
                 <div>
                     <h2 class="text-sm font-semibold text-cyan-500 uppercase tracking-wider">"Upcoming Hearings"</h2>
                     <ul class="mt-4 text-gray-400">
