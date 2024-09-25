@@ -8,7 +8,7 @@ pub fn Nav() -> impl IntoView {
                 <nav class="flex flex-col space-y-4 text-white text-sm">
                     <NavLink url="/dashboard/overview" icon_type="dashboard" label="Dashboard" />
                     <NavLink url="/case-management" icon_type="cases" label="Case Management" />
-                    <NavLink url="/case-management/activity" icon_type="cases" label="Case Activity" />
+                    // <NavLink url="/case-management/activity" icon_type="cases" label="Case Activity" />
                     <NavLink url="/user-management" icon_type="user_management" label="User Management" />
                     // <NavLink url="/documents/activity" icon_type="documents" label="Documents" />
                     // <NavLink url="/scheduling/activity" icon_type="scheduling" label="Scheduling" />

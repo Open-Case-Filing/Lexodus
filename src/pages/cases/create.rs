@@ -126,27 +126,26 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
 
 }
 
-
 #[island]
 pub fn CreateCaseForm() -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
     let value = create_case.value();
 
     view! {
-        <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
+        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New Case"</h3>
             <ActionForm action=create_case>
                 <div class="mb-4">
                     <label for="case_number" class="block text-gray-400 mb-1">"Case Number:"</label>
-                    <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
                     <label for="title" class="block text-gray-400 mb-1">"Title:"</label>
-                    <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
                     <label for="status" class="block text-gray-400 mb-1">"Status:"</label>
-                    <select id="status" name="status" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required>
+                    <select id="status" name="status" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required>
                         <option value="Open">"Open"</option>
                         <option value="Closed">"Closed"</option>
                         <option value="Pending">"Pending"</option>
@@ -154,23 +153,23 @@ pub fn CreateCaseForm() -> impl IntoView {
                 </div>
                 <div class="mb-4">
                     <label for="filed_date" class="block text-gray-400 mb-1">"Filed Date:"</label>
-                    <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
                     <label for="closed_date" class="block text-gray-400 mb-1">"Closed Date:"</label>
-                    <input type="date" id="closed_date" name="closed_date" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded"/>
+                    <input type="date" id="closed_date" name="closed_date" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none"/>
                 </div>
                 <div class="mb-4">
-                    <label for="court_id" class="block text-gray-400 mb-1">"Court Name:"</label>
-                    <input type="text" id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <label for="court_id" class="block text-gray-400 mb-1">"Court ID:"</label>
+                    <input type="number" id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
-                    <label for="current_court_id" class="block text-gray-400 mb-1">"Current Court Name:"</label>
-                    <input type="text" id="current_court_id" name="current_court_id" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <label for="current_court_id" class="block text-gray-400 mb-1">"Current Court ID:"</label>
+                    <input type="number" id="current_court_id" name="current_court_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
-                    <label for="judge_id" class="block text-gray-400 mb-1">"Judge Name:"</label>
-                    <input type="text" id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded"/>
+                    <label for="judge_id" class="block text-gray-400 mb-1">"Judge ID:"</label>
+                    <input type="number" id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none"/>
                 </div>
                 <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add Case"</button>
             </ActionForm>
@@ -182,16 +181,11 @@ pub fn CreateCaseForm() -> impl IntoView {
             </Show>
             {move || value.get().map(|result| match result {
                 Ok(case_number) => view! { <div class="mt-4 text-green-400">"Case added successfully. Case number: " {case_number}</div> },
-                Err(_) => view! { <div class="mt-4 text-red-400">"Error adding case"</div> },
+                Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
             })}
         </div>
     }
 }
-
-
-
-
-
 
 #[component]
 pub fn CaseList() -> impl IntoView {
@@ -200,61 +194,43 @@ pub fn CaseList() -> impl IntoView {
     view! {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Cases"</h3>
-            <ErrorBoundary
-                fallback=|errors| view! {
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                        <strong class="font-bold">"Error loading cases: "</strong>
-                        <ul class="list-disc list-inside">
-                            {move || errors.get()
-                                .into_iter()
-                                .map(|(_, e)| view! { <li>{e.to_string()}</li>})
-                                .collect_view()
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-gray-400">"Case Number"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Title"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Status"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Filed Date"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Court ID"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Current Court ID"</th>
+                            <th class="px-4 py-2 text-left text-gray-400">"Judge ID"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {move || cases.get().map(|result| match result {
+                        Ok(cases) => cases.into_iter().map(|case| {
+                            let case = case.clone();
+                            view! {
+                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.filed_date}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
+                                    <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
+                                </tr>
                             }
-                        </ul>
-                    </div>
-                }
-            >
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-gray-400">"Case Number"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Title"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Status"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Filed Date"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Court"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Current Court"</th>
-                                <th class="px-4 py-2 text-left text-gray-400">"Judge"</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {move || cases.get().map(|result| match result {
-                            Ok(cases) => cases.into_iter().map(|case| {
-                                let case = case.clone(); // Clone the case here if necessary
-                                view! {
-                                    <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.filed_date}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
-                                        <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
-                                    </tr>
-                                }
-                            }).collect_view(),
-                            Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
-                        })}
-
-                        </tbody>
-                    </table>
-                </div>
-            </ErrorBoundary>
-
+                        }).collect_view(),
+                        Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
+                    })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
 }
-
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
@@ -264,17 +240,12 @@ pub fn CaseManagement() -> impl IntoView {
         <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
         <Meta property="og:description" content="Add new cases and view existing cases in the Open Case Filing System."/>
         <Default_Layout>
-            <div class="w-full md:w-3/4 p-8">
+            <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold">"Case Management"</h2>
                 </div>
-
-                <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-4 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mb-8">
-
-                     <CaseList />
-                    <CreateCaseForm />
-                </div>
-
+                <CaseList />
+                <CreateCaseForm />
             </div>
         </Default_Layout>
     }

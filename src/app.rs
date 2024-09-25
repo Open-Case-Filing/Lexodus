@@ -25,7 +25,7 @@ pub fn App() -> impl IntoView {
             <Route path="/dashboard/overview" view=HomePage/>
             <Route path="/case-management" view=CaseManagement/>
             <Route path="/changelog" view=Changelog/>
-            <Route path="/case-management/activity" view=Activity/>
+            // <Route path="/case-management/activity" view=Activity/>
             <Route path="/user-management" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
           </Routes>

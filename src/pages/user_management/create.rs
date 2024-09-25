@@ -92,79 +92,50 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 pub fn CreateUserForm() -> impl IntoView {
     let create_user = create_server_action::<CreateUser>();
     let value = create_user.value();
-    // spawn_local(async move {
-    //     match create_user().await {
-    //         Ok(fetched_users) => set_users.set(Ok(fetched_users)),
-    //         Err(e) => set_users.set(Err(e)),
-    //     }
-    // });
-    view! {
-        <ErrorBoundary
-            fallback=|errors| view! {
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <strong class="font-bold">"Error adding user: "</strong>
-                    <ul class="list-disc list-inside">
-                        {move || errors.get()
-                            .into_iter()
-                            .map(|(_, e)| view! { <li>{e.to_string()}</li>})
-                            .collect_view()
-                        }
-                    </ul>
-                </div>
-            }
-        >
-            <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
-                <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
-                <ActionForm action=create_user>
 
+    view! {
+        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mt-4">
+            <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
+            <ActionForm action=create_user>
                 <div class="mb-4">
                     <label for="username" class="block text-gray-400 mb-1">"Username:"</label>
-                    <input type="text" id="username" name="username" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="text" id="username" name="username" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
                     <label for="password" class="block text-gray-400 mb-1">"Password:"</label>
-                    <input type="password" id="password" name="password" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="password" id="password" name="password" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <div class="mb-4">
                     <label for="role_id" class="block text-gray-400 mb-1">"Role ID:"</label>
-                    <input type="number" id="role_id" name="role_id" class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded" required/>
+                    <input type="number" id="role_id" name="role_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
                 <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add User"</button>
-                </ActionForm>
-                 <Show
-                     when=move || create_user.pending().get()
-                     fallback=|| view! { <div></div> }
-                 >
-                     <div class="mt-4 text-gray-400">"Adding user..."</div>
-                 </Show>
-                 {move || value.get().map(|result| match result {
-                     Ok(message) => view! { <div class="mt-4 text-green-400">{message}</div> },
-                     Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
-                 })}
-             </div>
-         </ErrorBoundary>
-     }
- }
-
-
+            </ActionForm>
+            <Show
+                when=move || create_user.pending().get()
+                fallback=|| view! { <div></div> }
+            >
+                <div class="mt-4 text-gray-400">"Adding user..."</div>
+            </Show>
+            {move || value.get().map(|result| match result {
+                Ok(message) => view! { <div class="mt-4 text-green-400">{message}</div> },
+                Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
+            })}
+        </div>
+    }
+}
 
 #[component]
 pub fn UserList() -> impl IntoView {
-  let (refresh_trigger, _set_refresh_trigger) = create_signal(0);
-
-  let users = create_resource(
-      move || refresh_trigger.get(),
-      |_| async move {
-          logging::log!("loading data from /users/GetUsers");
-          get_users().await
-      },
-  );
-
-  let (user_trigger, _set_user_trigger) = create_signal(users.get());
+    let (refresh_trigger, _set_refresh_trigger) = create_signal(0);
+    let users = create_resource(
+        move || refresh_trigger.get(),
+        |_| async move { get_users().await },
+    );
+    let (user_trigger, _set_user_trigger) = create_signal(users.get());
 
     view! {
-
-        <div class="w-full bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
+        <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
@@ -190,9 +161,9 @@ pub fn UserList() -> impl IntoView {
                 </table>
             </div>
         </div>
-
     }
 }
+
 #[component]
 pub fn UserManagement() -> impl IntoView {
     view! {
@@ -201,15 +172,12 @@ pub fn UserManagement() -> impl IntoView {
         <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
         <Meta property="og:description" content="Manage users, roles, and permissions in the Open Case Filing System."/>
         <Default_Layout>
-            <div class="w-full md:w-3/4 p-8">
+            <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold">"User Management"</h2>
                 </div>
-                <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-4 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mb-8">
-
-                           <UserList />
-                           <CreateUserForm />
-                </div>
+                <UserList />
+                <CreateUserForm />
             </div>
         </Default_Layout>
     }
