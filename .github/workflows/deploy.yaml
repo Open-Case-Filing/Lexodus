@@ -37,7 +37,7 @@ jobs:
         run: cargo binstall wasm-bindgen-cli --no-confirm
 
       - name: Install cargo-leptos
-        run: cargo install cargo-leptos --no-confirm
+        run: cargo install cargo-leptos
 
 
       - name: Install Spin
