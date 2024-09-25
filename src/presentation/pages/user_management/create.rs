@@ -3,7 +3,7 @@ use leptos_router::ActionForm;
 use leptos_meta::Meta;
 use leptos_meta::Title;
 use serde::{Deserialize, Serialize};
-use crate::layouts::default::*;
+use crate::presentation::layouts::default::*;
 use cfg_if::cfg_if;
 
 cfg_if! {
