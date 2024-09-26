@@ -6,7 +6,7 @@ use spin_sdk::variables;
 #[cfg(feature = "ssr")]
 use crate::infrastructure::repositories::pg_case_repository::PgCaseRepository;
 #[cfg(feature = "ssr")]
-use crate::domain::models::Case;  // Make sure this import is correct
+use crate::domain::models::case::Case;  // Make sure this import is correct
 
 use leptos::ServerFnError;
 
