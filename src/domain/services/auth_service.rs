@@ -1,4 +1,5 @@
 // src/domain/services/auth_service.rs
+// src/domain/services/mod.rs
 use leptos::*;
 use jsonwebtoken::{decode, DecodingKey, Validation, errors::Error as JwtError};
 use serde::{Deserialize, Serialize};

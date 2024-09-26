@@ -26,10 +26,10 @@ impl Container {
         CaseService::new(case_repo, user_repo)
     }
 
-    pub fn auth_service(&self) -> AuthService<PgUserRepository> {
-        let user_repo = PgUserRepository::new(self.db_connection.clone());
-        AuthService::new(user_repo, self.jwt_secret.clone())
-    }
+    // pub fn auth_service(&self) -> AuthService<PgUserRepository> {
+    //     let user_repo = PgUserRepository::new(self.db_connection.clone());
+    //     AuthService::new(user_repo, self.jwt_secret.clone())
+    // }
 
     // Other service getters...
 }

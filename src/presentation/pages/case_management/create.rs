@@ -178,7 +178,7 @@ pub fn CreateCaseForm() -> impl IntoView {
 pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
-    view! {
+    let var_name = view! {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Cases"</h3>
             <div class="overflow-x-auto">
@@ -216,7 +216,8 @@ pub fn CaseList() -> impl IntoView {
                 </table>
             </div>
         </div>
-    }
+    };
+    var_name
 }
 
 #[component]

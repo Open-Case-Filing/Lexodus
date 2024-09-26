@@ -1,5 +1,13 @@
 use leptos::*;
 use crate::domain::models::mdl::MDLCase;
+
+use cfg_if::cfg_if;
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+        use crate::infrastructure::di::container::Container;
+        use spin_sdk::variables;
+    }
+}
 #[server(CreateMDLProceeding, "/api")]
 pub async fn create_mdl_proceeding(title: String) -> Result<String, ServerFnError> {
     let db_url = variables::get("db_url").unwrap();

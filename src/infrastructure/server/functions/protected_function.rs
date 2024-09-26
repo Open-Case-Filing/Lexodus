@@ -1,7 +1,13 @@
 use leptos::*;
 use crate::infrastructure::di::Container;
 use crate::infrastructure::server::middleware::auth::auth_middleware;
-
+use cfg_if::cfg_if;
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+        use crate::infrastructure::di::container::Container;
+        use spin_sdk::variables;
+    }
+}
 #[server(ProtectedFunction, "/api")]
 pub async fn protected_function_handler(/* params */) -> Result<String, ServerFnError> {
     let db_url = spin_sdk::variables::get("db_url").expect("db_url must be set");
