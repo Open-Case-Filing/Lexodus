@@ -1,10 +1,10 @@
-mod app;
-mod components;
-mod functions;
-mod layouts;
-mod models;
-mod pages;
-mod services;
+pub mod app;
+pub mod domain;
+pub mod application;
+pub mod infrastructure;
+pub mod presentation;
+
+
 
 #[cfg(feature = "ssr")]
 mod server;

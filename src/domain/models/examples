@@ -1,0 +1,78 @@
+use serde::{Deserialize, Serialize};
+use validator::Validate;
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct Judge {
+    pub id: i64,
+    #[validate(length(min = 1, max = 100))]
+    pub name: String,
+    pub court_id: i64,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub birthdate: String,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub appointed_date: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct Case {
+    pub id: i64,
+    #[validate(length(min = 1, max = 50))]
+    pub case_number: String,
+    #[validate(length(min = 1, max = 255))]
+    pub title: String,
+    #[validate(length(min = 1, max = 50))]
+    pub status: String,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub filed_date: String,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub closed_date: Option<String>,
+    pub court_id: i64,
+    pub current_court_id: i64,
+    pub judge_id: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct Document {
+    pub id: i64,
+    pub case_id: i64,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub case_filed_date: String,
+    pub docket_id: Option<i64>,
+    #[validate(length(min = 1, max = 255))]
+    pub title: String,
+    #[validate(length(min = 1, max = 255))]
+    pub file_path: String,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub filed_date: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct Hearing {
+    pub id: i64,
+    pub case_id: i64,
+    #[validate(length(min = 10, max = 10))]  // Assuming YYYY-MM-DD format
+    pub case_filed_date: String,
+    pub docket_id: Option<i64>,
+    #[validate(length(min = 19, max = 26))]  // Assuming ISO 8601 format
+    pub hearing_date: String,
+    #[validate(length(min = 1, max = 255))]
+    pub location: String,
+    #[validate(length(max = 1000))]
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct UserActivityLog {
+    pub id: i64,
+    pub user_id: i64,
+    #[validate(length(min = 1, max = 100))]
+    pub action_type: String,
+    pub action_details: serde_json::Value,
+    pub ip_address: String,  // Changed from std::net::IpAddr to String
+    #[validate(length(max = 255))]
+    pub user_agent: Option<String>,
+    #[validate(length(min = 19, max = 26))]  // Assuming ISO 8601 format
+    pub created_at: String,
+}
+
+// ... other structs remain the same

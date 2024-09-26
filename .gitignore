@@ -15,3 +15,4 @@ vendor
 .spin/logs
 .spin/ai-models/llama/llama-2-13b-chat.ggmlv3.q3_K_L.bin
 runtime-config.toml
+.env

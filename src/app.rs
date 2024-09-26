@@ -2,12 +2,12 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::pages::activity::Activity;
-use crate::pages::cases::*;
-use crate::pages::user_management::*;
-use crate::pages::changelog::Changelog;
-use crate::pages::homepage::HomePage;
-use crate::pages::login::Login;
+use crate::presentation::pages::{
+  changelog::Changelog,
+  homepage::HomePage,
+  case_management::create::CaseManagement,
+  user_management::create::UserManagement,
+  login::Login};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -25,7 +25,6 @@ pub fn App() -> impl IntoView {
             <Route path="/dashboard/overview" view=HomePage/>
             <Route path="/case-management" view=CaseManagement/>
             <Route path="/changelog" view=Changelog/>
-            // <Route path="/case-management/activity" view=Activity/>
             <Route path="/user-management" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
           </Routes>

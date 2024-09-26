@@ -956,6 +956,39 @@ FROM
 JOIN courts co ON c.court_id = co.id
 LEFT JOIN judges j ON c.judge_id = j.id;
 
+
+-- Update the cases table to include MDL-related fields
+ALTER TABLE cases
+ADD COLUMN is_mdl BOOLEAN DEFAULT FALSE,
+ADD COLUMN mdl_status TEXT CHECK (mdl_status IN ('PENDING', 'CONSOLIDATED', 'REMANDED', 'CLOSED'));
+
+-- Create the case_number_sequences table if it doesn't exist
+CREATE TABLE IF NOT EXISTS case_number_sequences (
+    district_code TEXT,
+    year INT,
+    current_value INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (district_code, year)
+);
+
+-- Create the mdl_proceedings table
+CREATE TABLE IF NOT EXISTS mdl_proceedings (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    mdl_number TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create the mdl_cases junction table
+CREATE TABLE IF NOT EXISTS mdl_cases (
+    mdl_id BIGINT REFERENCES mdl_proceedings(id),
+    case_id BIGINT REFERENCES cases(id),
+    date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    date_remanded TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY (mdl_id, case_id)
+);
+
+
 -- Sample data insertion (minimal set for testing)
 INSERT INTO roles (name, description) VALUES
 ('judge', 'Federal judge'),
