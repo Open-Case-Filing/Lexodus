@@ -1,5 +1,8 @@
-use leptos::*;
 
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
 pub fn cors_middleware(allowed_origins: Vec<String>) -> impl Fn(leptos::Request) -> Result<leptos::Request, ServerFnError> {
     move |mut req: leptos::Request| {
         let origin = req.headers().get("Origin")
@@ -16,3 +19,4 @@ pub fn cors_middleware(allowed_origins: Vec<String>) -> impl Fn(leptos::Request)
         }
     }
 }
+}}

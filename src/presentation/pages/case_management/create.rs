@@ -1,21 +1,17 @@
 
 use leptos::*;
 use leptos_router::ActionForm;
-use crate::layouts::default::*;
+use crate::presentation::layouts::default::*;
 use leptos_meta::Meta;
 use leptos_meta::Title;
 use crate::domain::models::case::Case;
-use crate::infrastructure::server::functions::case_functions::create_case;
-
 
 use cfg_if::cfg_if;
-
 cfg_if! {
     if #[cfg(feature = "ssr")] {
         use spin_sdk::pg::{Connection, ParameterValue};
         use spin_sdk::{variables};
         use spin_sdk::pg::*;
-
     }
 }
 
@@ -203,15 +199,15 @@ pub fn CaseList() -> impl IntoView {
                         Ok(cases) => cases.into_iter().map(|case| {
                             let case = case.clone();
                             view! {
-                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.filed_date}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
-                                </tr>
+                              <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.filed_date.to_string()}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
+                                  <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
+                              </tr>
                             }
                         }).collect_view(),
                         Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),

@@ -1,12 +1,12 @@
-
 use cfg_if::cfg_if;
+
 cfg_if! {
     if #[cfg(feature = "ssr")] {
+
       use crate::infrastructure::repositories::pg_case_repository::PgCaseRepository;
       use anyhow::Result;
       use chrono::Utc;
 
-      #[cfg(feature = "ssr")]
       pub fn generate() -> Result<String> {
           let db_url = spin_sdk::variables::get("db_url").expect("db_url must be set");
           let repo = PgCaseRepository::new(&db_url)?;
@@ -16,6 +16,4 @@ cfg_if! {
 
           Ok(format!("MDL-{}-{:04}", year, sequence))
       }
-
-    }
-}
+}}

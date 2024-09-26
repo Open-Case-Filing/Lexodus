@@ -1,8 +1,14 @@
-use leptos::*;
-use crate::domain::services::auth_service::AuthService;
+// src/infrastructure/server/middleware/auth.rs
 
-pub async fn auth_middleware<T>(
-    auth_service: &AuthService,
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+use crate::domain::services::auth_service::AuthService;
+use crate::infrastructure::repositories::pg_user_repository::UserRepository;
+
+pub async fn auth_middleware<T, UR: UserRepository>(
+    auth_service: &AuthService<UR>,
     req: leptos::Request,
     next: impl Fn(leptos::Request) -> T,
 ) -> Result<T, ServerFnError> {
@@ -20,3 +26,6 @@ pub async fn auth_middleware<T>(
         Err(_) => Err(ServerFnError::ServerError("Invalid token".into())),
     }
 }
+
+
+}}

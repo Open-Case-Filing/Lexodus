@@ -1,4 +1,8 @@
 // src/infrastructure/repositories/pg_user_activity_repository.rs
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
 use async_trait::async_trait;
 use crate::domain::models::user_activity::UserActivity;
 use crate::domain::repositories::UserActivityRepository;
@@ -39,5 +43,9 @@ impl UserActivityRepository for PgUserActivityRepository {
         // You'll need to implement this conversion based on your database schema
         // and UserActivity struct definition
         unimplemented!("Convert database rows to Vec<UserActivity>")
+    }
+}
+
+
     }
 }

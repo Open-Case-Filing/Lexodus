@@ -1,24 +1,9 @@
 use leptos::*;
 use leptos_meta::*;
-use crate::functions::save_count::*;
-use crate::layouts::default::*;
-use crate::components::search_bar::*;
+use crate::presentation::layouts::default::*;
+use crate::presentation::components::search_bar::SearchBar;
 
-#[island]
-pub fn Counter() -> impl IntoView {
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| {
-        set_count.update(|count| *count += 1);
-        spawn_local(async move {
-            save_count(count.get()).await.unwrap();
-        });
-    };
-    view! {
-        <button class="text-blue-800" on:click=on_click>"Click Me: " {count}</button>
 
-    }
-
-}
 #[component]
 pub fn HomePage() -> impl IntoView {
     view! {

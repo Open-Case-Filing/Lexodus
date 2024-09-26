@@ -1,9 +1,39 @@
-use crate::services::get_case_notifications::get_case_notifications;
 use leptos::*;
+
+#[derive(Clone)]
+struct Notification {
+    notification_id: String,
+    case_name: String,
+    date: String,
+    message: String,
+    status: String,
+}
 
 #[island]
 pub fn CaseNotifications() -> impl IntoView {
-    let notifications = create_resource(|| (), |_| async move { get_case_notifications().await });
+    let mock_notifications = vec![
+        Notification {
+            notification_id: "1".to_string(),
+            case_name: "Smith v. Johnson".to_string(),
+            date: "2023-09-15".to_string(),
+            message: "New document filed".to_string(),
+            status: "Unread".to_string(),
+        },
+        Notification {
+            notification_id: "2".to_string(),
+            case_name: "Doe v. Corp Inc.".to_string(),
+            date: "2023-09-14".to_string(),
+            message: "Hearing scheduled".to_string(),
+            status: "Read".to_string(),
+        },
+        Notification {
+            notification_id: "3".to_string(),
+            case_name: "State v. Williams".to_string(),
+            date: "2023-09-13".to_string(),
+            message: "Motion filed".to_string(),
+            status: "Unread".to_string(),
+        },
+    ];
 
     view! {
         <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
@@ -20,18 +50,15 @@ pub fn CaseNotifications() -> impl IntoView {
                         </tr>
                     </thead>
                     <tbody>
-                    {move || notifications.get().map(|result| match result {
-                        Ok(notifications) => notifications.into_iter().map(|notification| view! {
-                            <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                <td class="border-t border-gray-700 px-4 py-2">{notification.notification_id}</td>
-                                <td class="border-t border-gray-700 px-4 py-2">{notification.case_name}</td>
-                                <td class="border-t border-gray-700 px-4 py-2">{notification.date}</td>
-                                <td class="border-t border-gray-700 px-4 py-2">{notification.message}</td>
-                                <td class="border-t border-gray-700 px-4 py-2">{notification.status}</td>
-                            </tr>
-                        }).collect_view(),
-                        Err(_) => view! { <tr><td colspan="5" class="text-center">"Error loading case notifications"</td></tr> }.into_view()
-                    })}
+                    {mock_notifications.into_iter().map(|notification| view! {
+                        <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                            <td class="border-t border-gray-700 px-4 py-2">{notification.notification_id}</td>
+                            <td class="border-t border-gray-700 px-4 py-2">{notification.case_name}</td>
+                            <td class="border-t border-gray-700 px-4 py-2">{notification.date}</td>
+                            <td class="border-t border-gray-700 px-4 py-2">{notification.message}</td>
+                            <td class="border-t border-gray-700 px-4 py-2">{notification.status}</td>
+                        </tr>
+                    }).collect_view()}
                     </tbody>
                 </table>
             </div>

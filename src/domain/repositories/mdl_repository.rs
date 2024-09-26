@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 use anyhow::Result;
-use crate::domain::models::MDLProceeding;
+use crate::domain::models::mdl::MDLProceeding;
 
 #[async_trait]
 pub trait MDLRepository {

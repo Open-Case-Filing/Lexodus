@@ -17,7 +17,7 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     conf.leptos_options.output_name = "lexodus".to_owned();
     // let token = variables::get("token").unwrap();
     // let dev_value = variables::get("dev_value").unwrap();
-    let db_url = variables::get("db_url").unwrap();
+    // let db_url = variables::get("db_url").unwrap();
     // let response = format!(
     //     "Hello, world!
     //     DB_URL: {}",
@@ -34,9 +34,9 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     let mut routes = RouteTable::build(app_router);
     routes.add_server_fn_prefix("/api").unwrap();
 
-    let con =
-        Arc::new(spin_sdk::sqlite::Connection::open("default").expect("Failed to open lexodus db"));
-    let conn = Arc::new(pg::Connection::open(&db_url).expect("Failed to open postgres db"));
+    // let con =
+    //     Arc::new(spin_sdk::sqlite::Connection::open("default").expect("Failed to open lexodus db"));
+    // let conn = Arc::new(pg::Connection::open(&db_url).expect("Failed to open postgres db"));
 
     // let _create_pg_tables = "CREATE TABLE PERSONS (
     //     id SERIAL PRIMARY KEY,
@@ -73,8 +73,14 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
   // store.migrate().await.expect("Failed to migrate sessions!");
 
     // Register server functions
-    register_explicit::<crate::functions::save_count::SaveCount>();
-    register_explicit::<crate::services::case_service::SearchCases>();
+    // case-management :: Case Management - Criminal / Civil Case
+    register_explicit::<crate::infrastructure::server::functions::case_functions::CreateCase>();
+    // case-management :: Multi-District Litigation
+    register_explicit::<crate::infrastructure::server::functions::mdl::CreateMDLProceeding>();
+    register_explicit::<crate::infrastructure::server::functions::mdl::AddCaseToMDL>();
+    register_explicit::<crate::infrastructure::server::functions::mdl::RemandCaseFromMDL>();
+    register_explicit::<crate::infrastructure::server::functions::mdl::get_mdl_cases>();
+    // Change these when we get CQRS pattern down (todo!)
     register_explicit::<crate::pages::cases::CreateCase>();
     register_explicit::<crate::pages::cases::GetCases>();
     register_explicit::<crate::pages::user_management::CreateUser>();

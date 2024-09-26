@@ -2,7 +2,7 @@
 
 use leptos::*;
 
-use crate::components::{Footer, Nav};
+use crate::presentation::components::{Footer, Nav};
 
 #[component]
 pub fn Wide_Layout(children: Children) -> impl IntoView {
@@ -23,7 +23,7 @@ pub fn Wide_Layout(children: Children) -> impl IntoView {
          </div>
       </div>
       <Footer/>
-      </div>    
-    
-    }   
+      </div>
+
+    }
 }

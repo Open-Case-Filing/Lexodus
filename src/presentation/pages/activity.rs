@@ -1,8 +1,8 @@
 use leptos::*;
 use leptos_meta::*;
 
-use crate::layouts::default::*;
-use crate::components::{CourtOrders, FilingDeadlines, HearingSchedules, CaseNotifications, RecentCaseActivity};
+use crate::presentation::layouts::default::*;
+use crate::presentation::components::{CourtOrders, FilingDeadlines, HearingSchedules, CaseNotifications, RecentCaseActivity};
 
 
 #[component]
@@ -24,13 +24,13 @@ pub fn Activity() -> impl IntoView {
       <div class="flex justify-between items-center mb-8">
           <h2 class="text-2xl font-semibold">Welcome to Open Case Filing System, Tyler</h2>
           <div class="relative">
-        
+
               <select aria-label="filter by interval" class="bg-gray-700 text-white p-2 rounded focus:outline-none">
                   <option>"Last week"</option>
                   <option>"Last month"</option>
                   <option>"Last year"</option>
               </select>
-             
+
           </div>
       </div>
 
@@ -93,9 +93,7 @@ pub fn Activity() -> impl IntoView {
 
   </div>
 
-      
+
       </Default_Layout>
     }
 }
-
-

@@ -1,33 +1,36 @@
+// src/infrastructure/di/container.rs
 
-use std::sync::Arc;
-use crate::domain::repositories::case_repository::CaseRepository;
-use crate::infrastructure::repositories::pg_case_repository::PgCaseRepository;
-use crate::application::services::case_service::CaseService;
-use crate::infrastructure::logging::logger::Logger;
-use crate::server::middleware::auth::AuthMiddleware;
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+use crate::infrastructure::repositories::{pg_case_repository::PgCaseRepository, pg_user_repository::PgUserActivityRepository};
+
+use crate::domain::services::case_service::CaseService;
+
+use spin_sdk::pg::Connection;
 
 pub struct Container {
-    case_repository: Arc<dyn CaseRepository>,
-    logger: Logger,
+    db_connection: Connection,
 }
 
 impl Container {
-    pub fn new() -> Self {
-        let logger = Logger::new();
-        let case_repository = Arc::new(PgCaseRepository::new()) as Arc<dyn CaseRepository>;
-        Self { case_repository, logger }
+    pub fn new(db_url: &str) -> Self {
+        let db_connection = Connection::open(db_url).expect("Failed to connect to database");
+        Self { db_connection }
     }
 
-    pub fn case_service(&self) -> CaseService {
-        CaseService::new(
-            Box::new(Arc::clone(&self.case_repository) as Box<dyn CaseRepository>),
-            self.logger.clone(),
-        )
+    pub fn case_service(&self) -> CaseService<PgCaseRepository, PgUserRepository> {
+        let case_repo = PgCaseRepository::new(self.db_connection.clone());
+        let user_repo = PgUserRepository::new(self.db_connection.clone());
+        CaseService::new(case_repo, user_repo)
     }
 
-
-    pub fn auth_middleware(&self) -> Arc<AuthMiddleware> {
-        Arc::clone(&self.auth_middleware)
+    pub fn auth_service(&self) -> AuthService<PgUserRepository> {
+        let user_repo = PgUserRepository::new(self.db_connection.clone());
+        AuthService::new(user_repo, self.jwt_secret.clone())
     }
 
+    // Other service getters...
 }
+}}
