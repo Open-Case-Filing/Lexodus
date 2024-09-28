@@ -2,17 +2,25 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::pages::activity::Activity;
 use crate::pages::cases::*;
 use crate::pages::user_management::*;
 use crate::pages::changelog::Changelog;
 use crate::pages::homepage::HomePage;
-use crate::pages::login::Login;
+use crate::pages::login::Login as Home;
+
+// auth
+use crate::providers::auth::{provide_auth, AuthContext};
+use crate::presentation::routes::logout::Logout;
+use crate::presentation::routes::login::Login;
+use crate::presentation::routes::signup::Signup;
 
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+    provide_auth();
+    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+
 
     view! {
       <Stylesheet id="leptos" href="/pkg/lexodus.css"/>
@@ -21,13 +29,34 @@ pub fn App() -> impl IntoView {
       <Router>
         <main>
           <Routes>
-            <Route path="/" view=Login/>
+            <Route path="/" view=Home/>
             <Route path="/dashboard/overview" view=HomePage/>
             <Route path="/case-management" view=CaseManagement/>
             <Route path="/changelog" view=Changelog/>
             // <Route path="/case-management/activity" view=Activity/>
             <Route path="/user-management" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
+            <Route
+              path="signup"
+              view=move || {
+                  view! { <Signup action=auth_context.signup/> }
+              }
+            />
+
+            <Route
+              path="login"
+              view=move || {
+                  view! { <Login action=auth_context.login/> }
+              }
+            />
+
+            <Route
+              path="logout"
+              view=move || {
+                  view! { <Logout action=auth_context.logout/> }
+              }
+            />
+
           </Routes>
         </main>
       </Router>

@@ -1,7 +1,11 @@
 use leptos::*;
+use crate::functions::save_count::*;
+use crate::providers::auth::AuthContext;
+
 
 #[component]
 pub fn Nav() -> impl IntoView {
+      let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
     view! {
         <aside id="nav" class="w-full lg:w-64 bg-gray-800 h-full text-white max-w-[48px]">
             <div class="rounded-lg shadow-lg w-full max-w-4xl mx-auto">
@@ -10,24 +14,48 @@ pub fn Nav() -> impl IntoView {
                     <NavLink url="/case-management" icon_type="cases" label="Case Management" />
                     // <NavLink url="/case-management/activity" icon_type="cases" label="Case Activity" />
                     <NavLink url="/user-management" icon_type="user_management" label="User Management" />
-                    // <NavLink url="/documents/activity" icon_type="documents" label="Documents" />
-                    // <NavLink url="/scheduling/activity" icon_type="scheduling" label="Scheduling" />
-                    // <NavLink url="/reports/activity" icon_type="reports" label="Reports & Analytics" />
-                    // <NavLink url="/user-management" icon_type="user_management" label="User Management" />
-                    // <NavLink url="/support" icon_type="support" label="Support" />
-                    // <NavLink url="/changelog" icon_type="changelog" label="Changelog" />
-                    // <NavLink url="/hearings" icon_type="calendar" label="Upcoming Hearings" />
-                    // <NavLink url="/motions" icon_type="gavel" label="Pending Motions" />
-                    // <NavLink url="/filings" icon_type="documents" label="Recent Filings" />
-                    // <NavLink url="/assignments" icon_type="courthouse" label="Courtroom Assignments" />
-                    // <NavLink url="/judges" icon_type="judge" label="Judges" />
-                    // <div class="mt-8 flex items-center">
-                    //     <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full mr-4" alt="User profile picture" />
-                    //     <div>
-                    //         <p class="text-sm font-semibold">"Tyler"</p>
-                    //         <p class="text-xs text-gray-400">"Tyler@example.com"</p>
-                    //     </div>
-                    // </div>
+        <Transition fallback=move || ()>
+          {move || {
+              let user = move || match auth_context.user.get() {
+                  Some(Ok(Some(user))) => Some(user),
+                  Some(Ok(None)) => None,
+                  Some(Err(_)) => None,
+                  None => None,
+              };
+              view! {
+                // logging::log!("USER: {:#?}", user());
+                <Show
+                  when=move || user().is_none()
+                  fallback=|| {
+                      view! {
+                        <li class="items-center">
+                          <a href="/signup">"Signup"</a>
+                        </li>
+                      }
+                  }
+                >
+
+                  {|| ()}
+                </Show>
+                <Show
+                  when=move || user().is_some()
+                  fallback=|| {
+                      view! {
+                        <li class="items-center">
+                          <a href="/login">"Login"</a>
+                        </li>
+                      }
+                  }
+                >
+
+                  <li class="items-center">
+                    <a href="/logout">"Logout"</a>
+                  </li>
+                </Show>
+              }
+          }}
+
+        </Transition>
                 </nav>
             </div>
         </aside>
@@ -36,6 +64,16 @@ pub fn Nav() -> impl IntoView {
 
 #[component]
 pub fn NavLink(url: &'static str, icon_type: &'static str, label: &'static str) -> impl IntoView {
+
+  let (count, set_count) = create_signal(0);
+  let on_click = move |_| {
+      set_count.update(|count| *count += 1);
+      spawn_local(async move {
+          save_count(count.get()).await.unwrap();
+      });
+  };
+
+
     let icon_svg = match icon_type {
         "calendar" => {
             r#"
@@ -126,7 +164,7 @@ pub fn NavLink(url: &'static str, icon_type: &'static str, label: &'static str) 
         _ => "",
     };
     view! {
-        <a rel="external" href={url} class="flex items-center text-gray-400 hover:text-white">
+        <a rel="external" on:click=on_click href={url} class="flex items-center text-gray-400 hover:text-white">
             <span inner_html={icon_svg}></span>
             // {label}
         </a>

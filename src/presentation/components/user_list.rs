@@ -1,6 +1,6 @@
 use leptos::*;
-use crate::domain::models::User;
-use crate::api::get_users;
+// use crate::domain::models::user::User;
+use crate::presentation::api::user::get_users;
 
 #[component]
 pub fn UserList() -> impl IntoView {

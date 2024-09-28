@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use cfg_if::cfg_if;
 use leptos::{use_context, expect_context, ServerFnError};
-use crate::models::User;
+use crate::domain::models::user::User;
 use leptos::server;
 
 cfg_if! {
@@ -59,14 +59,14 @@ if #[cfg(feature = "ssr")] {
         .collect();
     let cookie_string = cookies.first().map(|(k, v)| v);
     let cookie_jar = match cookie_string {
-        Some(c) => Cookie::split_parse_encoded(c.clone()),
+        Some(c) => Cookie::split_parse(c.clone()),
         None => return Err(LexodusAppError::AuthError),
     };
 
     let mut session_val = None;
     for cookie in cookie_jar.into_iter(){
         if let Ok(c) = cookie {
-            if c.name() == "lexodus_session" {
+            if c.name() == "Lexodus_session" {
                 session_val = Some(c.clone().value().to_owned());
                 break;
             }
@@ -137,7 +137,7 @@ pub async fn login(
     let res_options = expect_context::<ResponseOptions>();
     res_options.insert_header(
         "Set-Cookie",
-        format!("lexodus_session={session_cookie};Path=/;SameSite=Strict;").as_bytes(),
+        format!("Lexodus_session={session_cookie};Path=/;SameSite=Strict;").as_bytes(),
     );
 
     leptos_spin::redirect("/");
@@ -163,7 +163,7 @@ pub async fn signup(
         ));
     }
     // Don't want anyone signing up but me!
-    if username != "lexodus" {
+    if username != "Lexodus" {
         println!("AH AH AH, YOU DIDN'T SAY THE MAGIC WORD");
         leptos_spin::redirect("/nedry");
         return Ok(());
@@ -209,7 +209,7 @@ pub async fn logout() -> Result<(), ServerFnError> {
 
     // Delete session cookie by expiring it
     let res_parts = expect_context::<ResponseOptions>();
-    res_parts.insert_header("Set-Cookie","lexodus_session=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
+    res_parts.insert_header("Set-Cookie","Lexodus_session=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
 
     res_parts.insert_header("Set-Cookie","sessionid=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
     leptos_spin::redirect("/");

@@ -34,3 +34,12 @@ impl CreateUserHandler {
         Ok(user)
     }
 }
+
+
+struct case {
+  impl new for CreateUserCommand {
+    fn new(username: String, password: String, role_id: i64) -> Self {
+      Self { username, password, role_id }
+    }
+  }
+}
