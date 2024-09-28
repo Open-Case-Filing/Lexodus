@@ -162,12 +162,12 @@ pub async fn signup(
             "Passwords did not match.".to_string(),
         ));
     }
-    // Don't want anyone signing up but me!
-    if username != "Lexodus" {
-        println!("AH AH AH, YOU DIDN'T SAY THE MAGIC WORD");
-        leptos_spin::redirect("/nedry");
-        return Ok(());
-    }
+    // Don't want anyone signing up...but us?
+    // if username != "Lexodus" {
+    //     println!("AH AH AH, YOU DIDN'T SAY THE MAGIC WORD");
+    //     leptos_spin::redirect("/");
+    //     return Ok(());
+    // }
 
     let password_hashed = hash_password(password.as_bytes()).unwrap();
     con.execute(
