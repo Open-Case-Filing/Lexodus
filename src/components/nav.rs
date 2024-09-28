@@ -28,9 +28,7 @@ pub fn Nav() -> impl IntoView {
                   when=move || user().is_none()
                   fallback=|| {
                       view! {
-                        <li class="items-center">
-                          <a href="/signup">"Signup"</a>
-                        </li>
+                <NavLink url="/signup" icon_type="signup" label="Signup" />
                       }
                   }
                 >
@@ -41,16 +39,14 @@ pub fn Nav() -> impl IntoView {
                   when=move || user().is_some()
                   fallback=|| {
                       view! {
-                        <li class="items-center">
-                          <a href="/login">"Login"</a>
-                        </li>
+                        <NavLink url="/login" icon_type="login" label="Signup" />
+
                       }
                   }
                 >
 
-                  <li class="items-center">
-                    <a href="/logout">"Logout"</a>
-                  </li>
+                <NavLink url="/logout" icon_type="logout" label="logout" />
+
                 </Show>
               }
           }}
