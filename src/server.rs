@@ -83,6 +83,7 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     register_explicit::<crate::functions::auth::Signup>();
     register_explicit::<crate::functions::user::GetUser>();
     register_explicit::<crate::functions::user::GetSafeUser>();
+    register_explicit::<crate::services::get_action::GetActionMenuData>();
     render_best_match_to_stream_with_context(
         req,
         resp_out,

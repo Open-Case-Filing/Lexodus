@@ -5,7 +5,7 @@ use leptos_router::*;
 use crate::pages::cases::*;
 use crate::pages::user_management::*;
 use crate::pages::changelog::Changelog;
-use crate::pages::homepage::HomePage;
+use crate::pages::dashboard::Dashboard;
 use crate::pages::login::Login as Home;
 
 // auth
@@ -29,8 +29,13 @@ pub fn App() -> impl IntoView {
       <Router>
         <main>
           <Routes>
-            <Route path="/" view=Home/>
-            <Route path="/dashboard/overview" view=HomePage/>
+          <Route
+            path="/"
+            view=move || {
+                view! { <Login action=auth_context.login/> }
+            }
+          />
+            <Route path="/dashboard/overview" view=Dashboard/>
             <Route path="/case-management" view=CaseManagement/>
             <Route path="/changelog" view=Changelog/>
             // <Route path="/case-management/activity" view=Activity/>

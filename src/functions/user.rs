@@ -39,11 +39,15 @@ pub async fn get_safe_user() -> Result<Option<SafeUser>, ServerFnError> {
 
     // Redirect all non logged in users to Nedry!
     let safe_user = match auth_session(&req, &con).await {
-        Ok(u) => Some(u.into()),
+        Ok(u) => {
+          Some(u.into())
+
+        },
         Err(_) => {
-        //leptos_spin::redirect("/nedry");
+
         None
         }
     };
+
     Ok(safe_user)
 }

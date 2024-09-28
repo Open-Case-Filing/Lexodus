@@ -5,7 +5,7 @@ use crate::components::search_bar::*;
 
 
 #[component]
-pub fn HomePage() -> impl IntoView {
+pub fn Dashboard() -> impl IntoView {
     view! {
         <Meta property="og:title" content="Dashboard | Open Case Filing System"/>
         <Title text="Dashboard | Open Case Filing System"/>

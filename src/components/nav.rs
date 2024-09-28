@@ -28,7 +28,8 @@ pub fn Nav() -> impl IntoView {
                   when=move || user().is_none()
                   fallback=|| {
                       view! {
-                <NavLink url="/signup" icon_type="signup" label="Signup" />
+                        <NavLink url="/signup" icon_type="signup" label="Signup" />
+                        <NavLink url="/login" icon_type="login" label="Signup" />
                       }
                   }
                 >
@@ -39,7 +40,7 @@ pub fn Nav() -> impl IntoView {
                   when=move || user().is_some()
                   fallback=|| {
                       view! {
-                        <NavLink url="/login" icon_type="login" label="Signup" />
+                        <NavLink url="/logout" icon_type="logout" label="logout" />
 
                       }
                   }
@@ -65,6 +66,7 @@ pub fn NavLink(url: &'static str, icon_type: &'static str, label: &'static str) 
   let on_click = move |_| {
       set_count.update(|count| *count += 1);
       spawn_local(async move {
+
           save_count(count.get()).await.unwrap();
       });
   };

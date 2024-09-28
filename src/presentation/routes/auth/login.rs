@@ -1,68 +1,42 @@
-use crate::functions;
+use crate::functions::{self,auth::Login};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
 #[component]
 pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) -> impl IntoView {
+  let login_user = create_server_action::<Login>();
+  let value = login_user.value();
     view! {
       <Meta property="og:title" content="Login"/>
       <Title text="Login"/>
       <Meta name="description" content="Login to the site"/>
       <Meta property="og:description" content="Login to the site"/>
-      <Meta
-        property="og:image"
-        content="https://benwis.imgix.net/pictureofMe.jpeg"
-      />
-      <div class="flex min-h-full flex-col justify-center">
-        <div class="mx-auto w-full max-w-md px-8">
-          <h1 class="mb-4 text-3xl text-center font-bold tracking-tight text-black dark:text-white md:text-5xl">
-            "Login"
-          </h1>
+
+
+        <div class="bg-gradient-to-r from-cyan-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-white mb-2">"Open Case Filing System"</h1>
+            <p class="text-lg text-gray-300">"Enhancing judicial efficiency through technology"</p>
+        </div>
+        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-8 rounded-lg shadow-lg w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-center text-white">"Login"</h2>
           <ActionForm action=action class="space-y-6">
-            <div>
-              <label
-                for="username"
-                class="block text-sm font-medium text-gray-700 dark:text-white"
-              >
-                "Username"
-              </label>
-              <div class="mt-1">
-                <input
-                  id="username"
-                  required
-                  name="username"
-                  type="username"
-                  aria-describedby="username-error"
-                  class="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                for="password"
-                class="block text-sm font-medium text-gray-700 dark:text-white"
-              >
-                "Password"
-              </label>
-              <div class="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  aria-describedby="password-error"
-                  class="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              class="w-full rounded bg-yellow-400 py-2 px-4 text-white dark:text-gray-700 hover:bg-yellow-600 focus:bg-yellow-400"
-            >
-              "Log in"
-            </button>
-            <div class="flex items-center justify-between">
+                <div class="mb-4">
+                    <label for="username" class="block text-white text-sm font-bold mb-2">"Username"</label>
+                    <input type="username" id="username" name="username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"  aria-describedby="username-error" required/>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="block text-white text-sm font-bold mb-2">"Password"</label>
+                    <input type="password" id="password" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" aria-describedby="password-error" autoComplete="current-password" required/>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        "Log in"
+                    </button>
+                </div>
+                           <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <input
                   id="remember"
@@ -79,13 +53,28 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
               </div>
               <div class="text-center text-sm text-gray-500">
                 "Don't have an account?"
-                <a class="text-blue-500 underline" href="">
+                <a class="text-blue-500 underline" href="/signup">
                   "Sign up"
                 </a>
+                <a class="text-blue-500 underline" href="/dashboard/overview">
+                  "Already logged in?"
+                </a>
               </div>
+              <Show
+                  when=move || login_user.pending().get()
+                  fallback=|| view! { <div></div> }
+              >
+                  <div class="mt-4 text-gray-400">"Logging in..."</div>
+              </Show>
+              {move || value.get().map(|result| match result {
+                  Ok(_) => view! { <div class="mt-4 text-green-400">"You have logged in {_}"</div> },
+                  Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
+              })}
             </div>
-          </ActionForm>
+             </ActionForm>
+
+
         </div>
-      </div>
+    </div>
     }
 }
