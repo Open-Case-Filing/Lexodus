@@ -1,7 +1,7 @@
 use crate::services::get_court_orders::get_court_orders;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn CourtOrders() -> impl IntoView {
     let orders = create_resource(|| (), |_| async move { get_court_orders().await });
 

@@ -1,7 +1,7 @@
 use crate::services::get_action::get_action_menu_data;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn Action_Menu() -> impl IntoView {
     let data = create_resource(|| (), |_| async move { get_action_menu_data().await });
 

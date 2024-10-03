@@ -139,7 +139,7 @@ pub async fn login(
         "Set-Cookie",
         format!("Lexodus_session={session_cookie};Path=/;SameSite=Strict;").as_bytes(),
     );
-    leptos_spin::redirect("/dashboard/overview");
+
     Ok(())
 }
 

@@ -1,7 +1,7 @@
 use crate::services::get_case_notifications::get_case_notifications;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn CaseNotifications() -> impl IntoView {
     let notifications = create_resource(|| (), |_| async move { get_case_notifications().await });
 

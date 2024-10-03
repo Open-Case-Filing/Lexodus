@@ -1,7 +1,7 @@
 use crate::services::get_hearing_schedules::get_hearing_schedules;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn HearingSchedules() -> impl IntoView {
     let schedules = create_resource(|| (), |_| async move { get_hearing_schedules().await });
     view! {

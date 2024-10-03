@@ -25,22 +25,10 @@ pub fn Nav() -> impl IntoView {
               view! {
                 // logging::log!("USER: {:#?}", user());
                 <Show
-                  when=move || user().is_none()
-                  fallback=|| {
-                      view! {
-                        <NavLink url="/signup" icon_type="signup" label="Signup" />
-                        <NavLink url="/login" icon_type="login" label="Signup" />
-                      }
-                  }
-                >
-
-                  {|| ()}
-                </Show>
-                <Show
                   when=move || user().is_some()
                   fallback=|| {
                       view! {
-                        <NavLink url="/logout" icon_type="logout" label="logout" />
+                        <NavLink url="/login" icon_type="logout" label="logout" />
 
                       }
                   }

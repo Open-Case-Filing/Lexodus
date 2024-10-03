@@ -1,7 +1,7 @@
 use crate::services::get_filing_deadlines::get_filing_deadlines;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn FilingDeadlines() -> impl IntoView {
     let deadlines = create_resource(|| (), |_| async move { get_filing_deadlines().await });
     view! {

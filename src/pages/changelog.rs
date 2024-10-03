@@ -1,7 +1,7 @@
 use leptos::*;
 use crate::layouts::wide::Wide_Layout;
 
-#[island]
+#[component]
 pub fn Changelog() -> impl IntoView {
     view! {
         <Wide_Layout>

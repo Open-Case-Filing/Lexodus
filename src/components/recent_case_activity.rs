@@ -1,7 +1,7 @@
 use crate::services::get_recent_case_activities::get_recent_case_activities;
 use leptos::*;
 
-#[island]
+#[component]
 pub fn RecentCaseActivity() -> impl IntoView {
     let activities = create_resource(|| (), |_| async move { get_recent_case_activities().await });
 

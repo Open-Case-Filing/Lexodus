@@ -2,11 +2,13 @@ use crate::functions::{self,auth::Login};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-
+use crate::providers::auth::AuthContext;
 #[component]
 pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) -> impl IntoView {
   let login_user = create_server_action::<Login>();
-  let value = login_user.value();
+  let login_value = login_user.value();
+  let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+
     view! {
       <Meta property="og:title" content="Login"/>
       <Title text="Login"/>
@@ -53,23 +55,37 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
               </div>
               <div class="text-center text-sm text-gray-500">
                 "Don't have an account?"
-                <a class="text-blue-500 underline" href="/signup">
+              </div>
+                <a rel="external" class="text-blue-500 underline" href="/signup">
                   "Sign up"
                 </a>
-                <a class="text-blue-500 underline" href="/dashboard/overview">
+                <a rel="external" class="text-blue-500 underline" href="/dashboard/overview">
                   "Already logged in?"
                 </a>
-              </div>
-              <Show
-                  when=move || login_user.pending().get()
-                  fallback=|| view! { <div></div> }
-              >
-                  <div class="mt-4 text-gray-400">"Logging in..."</div>
-              </Show>
-              {move || value.get().map(|result| match result {
-                  Ok(_) => view! { <div class="mt-4 text-green-400">"You have logged in {_}"</div> },
-                  Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
-              })}
+
+
+              <Transition fallback=move || ()>
+                {move || {
+                    let user = move || match auth_context.user.get() {
+                        Some(Ok(Some(user))) => Some(user),
+                        Some(Ok(None)) => None,
+                        Some(Err(_)) => None,
+                        None => None,
+                    };
+                    view! {
+
+                      <Show
+                        when=move || user().is_some()
+                      >
+                        <Redirect path="/dashboard/overview" />
+                      </Show>
+
+
+
+                    }
+                }}
+
+              </Transition>
             </div>
              </ActionForm>
 
