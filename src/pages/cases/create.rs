@@ -235,10 +235,10 @@ pub fn CaseList() -> impl IntoView {
 #[component]
 pub fn CaseManagement() -> impl IntoView {
     view! {
-        <Meta property="og:title" content="Case Management | Open Case Filing System"/>
-        <Title text="Case Management | Open Case Filing System"/>
+        <Meta property="og:title" content="Case Management | Lexodus"/>
+        <Title text="Case Management | Lexodus"/>
         <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
-        <Meta property="og:description" content="Add new cases and view existing cases in the Open Case Filing System."/>
+        <Meta property="og:description" content="Add new cases and view existing cases in the Lexodus."/>
         <Default_Layout>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">

@@ -7,8 +7,8 @@ use crate::components::search_bar::*;
 #[component]
 pub fn Dashboard() -> impl IntoView {
     view! {
-        <Meta property="og:title" content="Dashboard | Open Case Filing System"/>
-        <Title text="Dashboard | Open Case Filing System"/>
+        <Meta property="og:title" content="Dashboard | Lexodus"/>
+        <Title text="Dashboard | Lexodus"/>
         <Meta name="description" content="Dashboard overview for OCFS with real time case numbers for the week, month, year."/>
         <Meta property="og:description" content="A dashboard with case management statistics and ability to see civil and criminal case information."/>
         <Meta
@@ -19,7 +19,7 @@ pub fn Dashboard() -> impl IntoView {
             <div class="flex-1 p-8 overflow-auto">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-2xl font-semibold">Welcome to Open Case Filing System, Tyler</h2>
+                        <h2 class="text-2xl font-semibold">Welcome to Lexodus, Tyler</h2>
                         <div class="relative">
                             <select aria-label="filter by interval" class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg text-white p-2 rounded focus:outline-none">
                                 <option>"Last week"</option>

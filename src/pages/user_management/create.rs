@@ -1,10 +1,10 @@
-use leptos::*;
-use leptos_router::ActionForm;
-use leptos_meta::Meta;
-use leptos_meta::Title;
-use serde::{Deserialize, Serialize};
 use crate::layouts::default::*;
 use cfg_if::cfg_if;
+use leptos::*;
+use leptos_meta::Meta;
+use leptos_meta::Title;
+use leptos_router::ActionForm;
+use serde::{Deserialize, Serialize};
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
@@ -27,7 +27,6 @@ pub async fn create_user(
     password: String,
     role_id: i64,
 ) -> Result<String, ServerFnError> {
-
     println!("--> Adding a new user: {}", username);
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
@@ -48,8 +47,11 @@ pub async fn create_user(
         Ok(rows_affected) => {
             println!("Rows affected: {}", rows_affected);
             Ok(format!("User added successfully: {}", rows_affected))
-        },
-        Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
+        }
+        Err(e) => Err(ServerFnError::ServerError(format!(
+            "Failed to execute SQL: {}",
+            e
+        ))),
     }
 }
 
@@ -84,9 +86,6 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 
     Ok(users)
 }
-
-
-
 
 #[island]
 pub fn CreateUserForm() -> impl IntoView {
@@ -135,42 +134,58 @@ pub fn UserList() -> impl IntoView {
     let (user_trigger, _set_user_trigger) = create_signal(users.get());
 
     view! {
-        <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
-            <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 text-left text-gray-400">"ID"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Username"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Role ID"</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {move || user_trigger.get().map(|result| match result {
-                            Ok(users) => users.into_iter().map(|user| view! {
-                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                    <td class="border-t border-gray-700 px-4 py-2">{user.id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{user.username}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{user.role_id}</td>
-                                </tr>
-                            }).collect_view(),
-                            Err(_) => view! { <tr><td colspan="3" class="text-center text-red-400">"Error loading users"</td></tr> }.into_view(),
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+      <Transition
+          fallback=move || view! { <p>"Loading users..."</p> }
+      >
+          <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
+              <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
+              <div class="overflow-x-auto">
+                  <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
+                      <thead>
+                          <tr>
+                              <th class="px-4 py-2 text-left text-gray-400">"ID"</th>
+                              <th class="px-4 py-2 text-left text-gray-400">"Username"</th>
+                              <th class="px-4 py-2 text-left text-gray-400">"Role ID"</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <Suspense fallback=move || view! { <tr><td colspan="3" class="text-center">"Loading..."</td></tr> }>
+                          {move || user_trigger.get().map(|result| match result {
+                              Ok(users) => view! {
+                                  <For
+                                      each=move || users.clone()
+                                      key=|user| user.id.clone()
+                                      children=move |user| {
+                                          view! {
+                                              <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                                  <td class="border-t border-gray-700 px-4 py-2">{user.id}</td>
+                                                  <td class="border-t border-gray-700 px-4 py-2">{user.username}</td>
+                                                  <td class="border-t border-gray-700 px-4 py-2">{user.role_id}</td>
+                                              </tr>
+                                          }
+                                      }
+                                  />
+                              }.into_view(),
+                              Err(_) => view! {
+                                  <tr><td colspan="3" class="text-center text-red-400">"Error loading users"</td></tr>
+                              }.into_view(),
+                          })}
+                          </Suspense>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </Transition>
     }
 }
 
 #[component]
 pub fn UserManagement() -> impl IntoView {
     view! {
-        <Meta property="og:title" content="User Management | Open Case Filing System"/>
-        <Title text="User Management | Open Case Filing System"/>
+        <Meta property="og:title" content="User Management | Lexodus"/>
+        <Title text="User Management | Lexodus"/>
         <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
-        <Meta property="og:description" content="Manage users, roles, and permissions in the Open Case Filing System."/>
+        <Meta property="og:description" content="Manage users, roles, and permissions in the Lexodus."/>
         <Default_Layout>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
