@@ -182,10 +182,10 @@ pub fn UserList() -> impl IntoView {
 #[component]
 pub fn UserManagement() -> impl IntoView {
     view! {
-        <Meta property="og:title" content="User Management | Open Case Filing System"/>
-        <Title text="User Management | Open Case Filing System"/>
+        <Meta property="og:title" content="User Management | Lexodus"/>
+        <Title text="User Management | Lexodus"/>
         <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
-        <Meta property="og:description" content="Manage users, roles, and permissions in the Open Case Filing System."/>
+        <Meta property="og:description" content="Manage users, roles, and permissions in the Lexodus."/>
         <Default_Layout>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
