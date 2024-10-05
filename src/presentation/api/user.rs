@@ -4,7 +4,7 @@ use crate::infrastructure::repositories::postgres_user_repository::PostgresUserR
 use crate::application::services::user_service::UserService;
 use crate::domain::models::user::User;
 use std::sync::Arc;
-use server_fn::{server, ServerFnError};
+
 use spin_sdk::variables;
 
 #[server(AddUser, "/api")]

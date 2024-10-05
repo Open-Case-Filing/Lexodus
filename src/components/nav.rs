@@ -174,7 +174,7 @@ pub fn NavLink(url: &'static str, icon_type: &'static str, label: &'static str) 
         _ => "",
     };
     view! {
-        <a rel="external" on:click=on_click href={url} class="flex items-center text-gray-400 hover:text-white">
+        <a on:click=on_click href={url} class="flex items-center text-gray-400 hover:text-white">
             <span inner_html={icon_svg}></span>
             // {label}
         </a>
