@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::layouts::default::*;
 use leptos_meta::Meta;
 use leptos_meta::Title;
-// use crate::models::case::Case;
+
+
+
 
 use cfg_if::cfg_if;
 
@@ -14,6 +16,7 @@ cfg_if! {
         use spin_sdk::pg::{Connection, ParameterValue};
         use spin_sdk::{variables};
         use spin_sdk::pg::*;
+
 
     }
 }
@@ -132,58 +135,87 @@ pub fn CreateCaseForm() -> impl IntoView {
     let value = create_case.value();
 
     view! {
-        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mt-4">
-            <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New Case"</h3>
-            <ActionForm action=create_case>
-                <div class="mb-4">
-                    <label for="case_number" class="block text-gray-400 mb-1">"Case Number:"</label>
-                    <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
-                </div>
-                <div class="mb-4">
-                    <label for="title" class="block text-gray-400 mb-1">"Title:"</label>
-                    <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
-                </div>
-                <div class="mb-4">
-                    <label for="status" class="block text-gray-400 mb-1">"Status:"</label>
-                    <select id="status" name="status" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required>
-                        <option value="Open">"Open"</option>
-                        <option value="Closed">"Closed"</option>
-                        <option value="Pending">"Pending"</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="filed_date" class="block text-gray-400 mb-1">"Filed Date:"</label>
-                    <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
-                </div>
-                <div class="mb-4">
-                    <label for="closed_date" class="block text-gray-400 mb-1">"Closed Date:"</label>
-                    <input type="date" id="closed_date" name="closed_date" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none"/>
-                </div>
-                <div class="mb-4">
-                    <label for="court_id" class="block text-gray-400 mb-1">"Court ID:"</label>
-                    <input type="number" id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
-                </div>
-                <div class="mb-4">
-                    <label for="current_court_id" class="block text-gray-400 mb-1">"Current Court ID:"</label>
-                    <input type="number" id="current_court_id" name="current_court_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
-                </div>
-                <div class="mb-4">
-                    <label for="judge_id" class="block text-gray-400 mb-1">"Judge ID:"</label>
-                    <input type="number" id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none"/>
-                </div>
-                <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add Case"</button>
-            </ActionForm>
-            <Show
-                when=move || create_case.pending().get()
-                fallback=|| view! { <div></div> }
-            >
-                <div class="mt-4 text-gray-400">"Adding case..."</div>
-            </Show>
-            {move || value.get().map(|result| match result {
-                Ok(case_number) => view! { <div class="mt-4 text-green-400">"Case added successfully. Case number: " {case_number}</div> },
-                Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
-            })}
-        </div>
+      // Section Container with Lexodus Style
+      <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+          <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Add New Case"</h3>
+
+          // Form for Adding New Case
+          <ActionForm action=create_case>
+
+              // Case Number Input
+              <div class="mb-4">
+                  <label for="case_number" class="block text-lexodus-700 mb-1">"Case Number:"</label>
+                  <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+              </div>
+
+              // Title Input
+              <div class="mb-4">
+                  <label for="title" class="block text-lexodus-700 mb-1">"Title:"</label>
+                  <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+              </div>
+
+              // Status Dropdown
+              <div class="mb-4">
+                  <label for="status" class="block text-lexodus-700 mb-1">"Status:"</label>
+                  <select id="status" name="status" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required>
+                      <option value="Open">"Open"</option>
+                      <option value="Closed">"Closed"</option>
+                      <option value="Pending">"Pending"</option>
+                  </select>
+              </div>
+
+              // Filed Date Input
+              <div class="mb-4">
+                  <label for="filed_date" class="block text-lexodus-700 mb-1">"Filed Date:"</label>
+                  <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+              </div>
+
+              // Closed Date Input
+              <div class="mb-4">
+                  <label for="closed_date" class="block text-lexodus-700 mb-1">"Closed Date:"</label>
+                  <input type="date" id="closed_date" name="closed_date" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500"/>
+              </div>
+
+              // Court ID Input
+              <div class="mb-4">
+                  <label for="court_id" class="block text-lexodus-700 mb-1">"Court ID:"</label>
+                  <input type="number" id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+              </div>
+
+              // Current Court ID Input
+              <div class="mb-4">
+                  <label for="current_court_id" class="block text-lexodus-700 mb-1">"Current Court ID:"</label>
+                  <input type="number" id="current_court_id" name="current_court_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+              </div>
+
+              // Judge ID Input
+              <div class="mb-4">
+                  <label for="judge_id" class="block text-lexodus-700 mb-1">"Judge ID:"</label>
+                  <input type="number" id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500"/>
+              </div>
+
+              // Submit Button
+              <button type="submit" class="w-full px-4 py-2 bg-lexodus-500 text-white rounded font-semibold hover:bg-lexodus-600 focus:outline-none focus:ring-2 focus:ring-lexodus-500">"Add Case"</button>
+          </ActionForm>
+
+          // Loading State for Form Submission
+          <Show
+              when=move || create_case.pending().get()
+              fallback=|| view! { <div></div> }
+          >
+              <div class="mt-4 text-lexodus-700">"Adding case..."</div>
+          </Show>
+
+          // Feedback Message for Success or Error
+          {move || value.get().map(|result| match result {
+              Ok(case_number) => view! {
+                  <div class="mt-4 text-green-500">"Case added successfully. Case number: " {case_number}</div>
+              },
+              Err(e) => view! {
+                  <div class="mt-4 text-red-500">{e.to_string()}</div>
+              },
+          })}
+      </section>
     }
 }
 
@@ -192,45 +224,62 @@ pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
     view! {
-        <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
-            <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Cases"</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 text-left text-gray-400">"Case Number"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Title"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Status"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Filed Date"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Court ID"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Current Court ID"</th>
-                            <th class="px-4 py-2 text-left text-gray-400">"Judge ID"</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {move || cases.get().map(|result| match result {
-                        Ok(cases) => cases.into_iter().map(|case| {
-                            let case = case.clone();
-                            view! {
-                                <tr class="hover:bg-cyan-100 hover:text-gray-900">
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.case_number}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.title}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.status}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.filed_date}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.current_court_id}</td>
-                                    <td class="border-t border-gray-700 px-4 py-2">{case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}</td>
-                                </tr>
-                            }
-                        }).collect_view(),
-                        Err(e) => view! { <tr><td colspan="7" class="text-center text-red-400">{e.to_string()}</td></tr> }.into_view(),
-                    })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
-}
+              // Outer Container for Existing Cases
+              <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+                  <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
+
+                  // Table for Case Data
+                  <table class="min-w-full bg-white">
+                      <thead>
+                          <tr>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court ID"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court ID"</th>
+                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge ID"</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          // Dynamically Render Cases or Show Error
+                          {move || cases.get().map(|result| match result {
+                              Ok(cases) => cases.into_iter().map(|case| {
+                                  let case = case.clone();
+                                  view! {
+                                      // Table Row with Hover Effect
+                                      <tr class="hover:bg-lexodus-50">
+                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">
+                                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                  {case.status}
+                                              </span>
+                                          </td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.court_id}</td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_id}</td>
+                                          <td class="py-2 px-4 border-b text-lexodus-800">
+                                              {case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}
+                                          </td>
+                                      </tr>
+                                  }
+                              }).collect_view(),
+
+                              // Error Row for Failed Case Retrieval
+                              Err(e) => view! {
+                                  <tr>
+                                      <td colspan="7" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
+                                  </tr>
+                              }.into_view(),
+                          })}
+                      </tbody>
+                  </table>
+              </section>
+          }
+      }
+
+
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {

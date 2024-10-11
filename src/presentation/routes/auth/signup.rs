@@ -12,7 +12,7 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
       <Meta property="og:description" content="Signup for the site"/>
       <Meta
         property="og:image"
-        content="https://benwis.imgix.net/pictureofMe.jpeg"
+        content="/images/lexodus.jpg"
       />
       <div class="flex min-h-full flex-col justify-center">
         <div class="mx-auto w-full max-w-md px-8">

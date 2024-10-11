@@ -67,12 +67,12 @@ files = [{ source = "public/fonts", destination = "/" }]
 
 
 [[trigger.http]]
-route = "/img/..."
+route = "/images/..."
 component = "images"
 
 [component.images]
 source = "wasi/spin-fileserver/spin_static_fs.wasm"
-files = [{ source = "public/img", destination = "/" }]
+files = [{ source = "public/images", destination = "/" }]
 
 
 [component.lexodus.variables]

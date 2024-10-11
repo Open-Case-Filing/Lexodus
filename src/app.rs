@@ -4,9 +4,8 @@ use leptos_router::*;
 
 use crate::pages::cases::*;
 use crate::pages::user_management::*;
-use crate::pages::changelog::Changelog;
-use crate::pages::dashboard::Dashboard;
-use crate::pages::login::Login as Home;
+
+
 
 // auth
 use crate::providers::auth::{provide_auth, AuthContext};
@@ -25,6 +24,10 @@ pub fn App() -> impl IntoView {
     view! {
       <Stylesheet id="leptos" href="/pkg/lexodus.css"/>
 
+      <Link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Merriweather:wght@700&display=swap" rel="stylesheet" />
+      <Link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+
       // content for this welcome page
       <Router>
         <main>
@@ -35,11 +38,9 @@ pub fn App() -> impl IntoView {
                 view! { <Login action=auth_context.login/> }
             }
           />
-            <Route path="/dashboard/overview" view=Dashboard/>
-            <Route path="/case-management" view=CaseManagement/>
-            <Route path="/changelog" view=Changelog/>
+            <Route path="/case" view=CaseManagement/>
             // <Route path="/case-management/activity" view=Activity/>
-            <Route path="/user-management" view=UserManagement/>
+            <Route path="/users" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
             <Route
               path="signup"

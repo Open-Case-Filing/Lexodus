@@ -1,10 +1,10 @@
 mod app;
-mod components;
+
 mod functions;
 mod layouts;
 mod models;
 mod pages;
-mod services;
+
 mod domain;
 mod errors;
 mod session;

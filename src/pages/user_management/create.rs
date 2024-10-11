@@ -92,8 +92,8 @@ pub fn CreateUserForm() -> impl IntoView {
     let create_user = create_server_action::<CreateUser>();
     let value = create_user.value();
 
-    view! {
-        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-cyan-500 mt-4">
+    let var_name = view! {
+        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-lexouds-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
             <ActionForm action=create_user>
                 <div class="mb-4">
@@ -108,7 +108,7 @@ pub fn CreateUserForm() -> impl IntoView {
                     <label for="role_id" class="block text-gray-400 mb-1">"Role ID:"</label>
                     <input type="number" id="role_id" name="role_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
                 </div>
-                <button type="submit" class="w-full px-4 py-2 bg-cyan-500 text-gray-900 rounded font-semibold hover:bg-cyan-600">"Add User"</button>
+                <button type="submit" class="w-full px-4 py-2 bg-lexouds-500 text-gray-900 rounded font-semibold hover:bg-lexouds-600">"Add User"</button>
             </ActionForm>
             <Show
                 when=move || create_user.pending().get()
@@ -121,7 +121,8 @@ pub fn CreateUserForm() -> impl IntoView {
                 Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
             })}
         </div>
-    }
+    };
+    var_name
 }
 
 #[component]
@@ -137,7 +138,7 @@ pub fn UserList() -> impl IntoView {
       <Transition
           fallback=move || view! { <p>"Loading users..."</p> }
       >
-          <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-cyan-500 mt-4">
+          <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-lexouds-500 mt-4">
               <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
               <div class="overflow-x-auto">
                   <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
@@ -157,7 +158,7 @@ pub fn UserList() -> impl IntoView {
                                       key=|user| user.id.clone()
                                       children=move |user| {
                                           view! {
-                                              <tr class="hover:bg-cyan-100 hover:text-gray-900">
+                                              <tr class="hover:bg-lexouds-100 hover:text-gray-900">
                                                   <td class="border-t border-gray-700 px-4 py-2">{user.id}</td>
                                                   <td class="border-t border-gray-700 px-4 py-2">{user.username}</td>
                                                   <td class="border-t border-gray-700 px-4 py-2">{user.role_id}</td>

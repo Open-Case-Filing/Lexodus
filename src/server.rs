@@ -72,8 +72,6 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
   let store = SqliteStore::from_connection(sqlite_connection.clone());
    store.migrate().await.expect("Failed to migrate sessions!");
     // Register server functions
-    register_explicit::<crate::functions::save_count::SaveCount>();
-    register_explicit::<crate::services::case_service::SearchCases>();
     register_explicit::<crate::pages::cases::CreateCase>();
     register_explicit::<crate::pages::cases::GetCases>();
     register_explicit::<crate::pages::user_management::CreateUser>();
@@ -83,7 +81,6 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     register_explicit::<crate::functions::auth::Signup>();
     register_explicit::<crate::functions::user::GetUser>();
     register_explicit::<crate::functions::user::GetSafeUser>();
-    register_explicit::<crate::services::get_action::GetActionMenuData>();
     render_best_match_to_stream_with_context(
         req,
         resp_out,
