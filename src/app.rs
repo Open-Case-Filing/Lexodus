@@ -12,6 +12,7 @@ use crate::providers::auth::{provide_auth, AuthContext};
 use crate::presentation::routes::logout::Logout;
 use crate::presentation::routes::login::Login;
 use crate::presentation::routes::signup::Signup;
+use crate::pages::home::Home;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -32,6 +33,7 @@ pub fn App() -> impl IntoView {
       <Router>
         <main>
           <Routes>
+                   <Route path="/home" view=Home/>
           <Route
             path="/"
             view=move || {

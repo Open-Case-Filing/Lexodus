@@ -20,116 +20,9 @@ cfg_if! {
 
     }
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Case {
-    case_number: String,
-    title: String,
-    status: String,
-    filed_date: String,
-    closed_date: Option<String>,
-    court_id: i64,
-    current_court_id: i64,
-    judge_id: Option<i64>,
-}
-
-#[server(CreateCase, "/api")]
-pub async fn create_case(
-    case_number: String,
-    title: String,
-    status: String,
-    filed_date: String,
-    closed_date: Option<String>,
-    court_id: i64,
-    current_court_id: i64,
-    judge_id: Option<i64>,
-) -> Result<String, ServerFnError> {
-    println!("--> Adding a new case: {}", filed_date);
-    let db_url = variables::get("db_url").unwrap();
-    let conn = Connection::open(&db_url)?;
-
-    let sql = "INSERT INTO cases (case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
-
-    let execute_result = conn.execute(
-        sql,
-        &[
-            ParameterValue::Str(case_number),
-            ParameterValue::Str(title),
-            ParameterValue::Str(status),
-            ParameterValue::Str(filed_date),
-            closed_date.map(ParameterValue::Str).unwrap_or(ParameterValue::DbNull),
-            ParameterValue::Int64(court_id),
-            ParameterValue::Int64(current_court_id),
-            judge_id.map(ParameterValue::Int64).unwrap_or(ParameterValue::DbNull),
-        ],
-    );
-
-    match execute_result {
-        Ok(rows_affected) => {
-            println!("Rows affected: {}", rows_affected);
-            Ok(format!("Case added successfully: {}", rows_affected))
-        },
-        Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
-    }
-}
 
 
-#[server(GetCases, "/api")]
-pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
-  let db_url = variables::get("db_url").unwrap();
-  let conn = Connection::open(&db_url)?;
-
-  let sql = "SELECT case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id FROM cases";
-
-  let rowset = conn.query(sql, &[])?;
-  let cases: Vec<Case> = rowset
-      .rows
-      .iter()
-      .map(|row| {
-          Case {
-              case_number: match &row[0] {
-                  DbValue::Str(case_number) => case_number.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              title: match &row[1] {
-                  DbValue::Str(title) => title.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              status: match &row[2] {
-                  DbValue::Str(status) => status.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              filed_date: match &row[3] {
-                  DbValue::Str(filed_date) => filed_date.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              closed_date: match &row[4] {
-                  DbValue::Str(closed_date) => Some(closed_date.clone()),
-                  DbValue::DbNull => None,
-                  _ => None, // Default to None if not a String or Null
-              },
-              court_id: match &row[5] {
-                  DbValue::Int64(court_id) => *court_id,
-                  _ => 0, // Default value if not an Int64
-              },
-              current_court_id: match &row[6] {
-                  DbValue::Int64(current_court_id) => *current_court_id,
-                  _ => 0, // Default value if not an Int64
-              },
-              judge_id: match &row[7] {
-                  DbValue::Int64(judge_id) => Some(*judge_id),
-                  DbValue::DbNull => None,
-                  _ => None, // Default to None if not an Int64 or Null
-              },
-          }
-      })
-      .collect();
-
-  Ok(cases)
-
-}
-
-#[island]
+#[component]
 pub fn CreateCaseForm() -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
     let value = create_case.value();
@@ -288,7 +181,7 @@ pub fn CaseManagement() -> impl IntoView {
         <Title text="Case Management | Lexodus"/>
         <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
         <Meta property="og:description" content="Add new cases and view existing cases in the Lexodus."/>
-        <Default_Layout>
+        <DefaultLayout>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold">"Case Management"</h2>
@@ -296,6 +189,117 @@ pub fn CaseManagement() -> impl IntoView {
                 <CaseList />
                 <CreateCaseForm />
             </div>
-        </Default_Layout>
+        </DefaultLayout>
     }
+}
+
+
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Case {
+    case_number: String,
+    title: String,
+    status: String,
+    filed_date: String,
+    closed_date: Option<String>,
+    court_id: i64,
+    current_court_id: i64,
+    judge_id: Option<i64>,
+}
+
+#[server(CreateCase, "/api")]
+pub async fn create_case(
+    case_number: String,
+    title: String,
+    status: String,
+    filed_date: String,
+    closed_date: Option<String>,
+    court_id: i64,
+    current_court_id: i64,
+    judge_id: Option<i64>,
+) -> Result<String, ServerFnError> {
+    println!("--> Adding a new case: {}", filed_date);
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
+
+    let sql = "INSERT INTO cases (case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+
+    let execute_result = conn.execute(
+        sql,
+        &[
+            ParameterValue::Str(case_number),
+            ParameterValue::Str(title),
+            ParameterValue::Str(status),
+            ParameterValue::Str(filed_date),
+            closed_date.map(ParameterValue::Str).unwrap_or(ParameterValue::DbNull),
+            ParameterValue::Int64(court_id),
+            ParameterValue::Int64(current_court_id),
+            judge_id.map(ParameterValue::Int64).unwrap_or(ParameterValue::DbNull),
+        ],
+    );
+
+    match execute_result {
+        Ok(rows_affected) => {
+            println!("Rows affected: {}", rows_affected);
+            Ok(format!("Case added successfully: {}", rows_affected))
+        },
+        Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
+    }
+}
+
+
+#[server(GetCases, "/api")]
+pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
+  let db_url = variables::get("db_url").unwrap();
+  let conn = Connection::open(&db_url)?;
+
+  let sql = "SELECT case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id FROM cases";
+
+  let rowset = conn.query(sql, &[])?;
+  let cases: Vec<Case> = rowset
+      .rows
+      .iter()
+      .map(|row| {
+          Case {
+              case_number: match &row[0] {
+                  DbValue::Str(case_number) => case_number.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              title: match &row[1] {
+                  DbValue::Str(title) => title.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              status: match &row[2] {
+                  DbValue::Str(status) => status.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              filed_date: match &row[3] {
+                  DbValue::Str(filed_date) => filed_date.clone(),
+                  _ => String::new(), // Default value if not a String
+              },
+              closed_date: match &row[4] {
+                  DbValue::Str(closed_date) => Some(closed_date.clone()),
+                  DbValue::DbNull => None,
+                  _ => None, // Default to None if not a String or Null
+              },
+              court_id: match &row[5] {
+                  DbValue::Int64(court_id) => *court_id,
+                  _ => 0, // Default value if not an Int64
+              },
+              current_court_id: match &row[6] {
+                  DbValue::Int64(current_court_id) => *current_court_id,
+                  _ => 0, // Default value if not an Int64
+              },
+              judge_id: match &row[7] {
+                  DbValue::Int64(judge_id) => Some(*judge_id),
+                  DbValue::DbNull => None,
+                  _ => None, // Default to None if not an Int64 or Null
+              },
+          }
+      })
+      .collect();
+
+  Ok(cases)
+
 }

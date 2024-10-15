@@ -87,12 +87,12 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
     Ok(users)
 }
 
-#[island]
+#[component]
 pub fn CreateUserForm() -> impl IntoView {
     let create_user = create_server_action::<CreateUser>();
     let value = create_user.value();
 
-    let var_name = view! {
+    let user_add_action = view! {
         <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-lexouds-500 mt-4">
             <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
             <ActionForm action=create_user>
@@ -122,7 +122,7 @@ pub fn CreateUserForm() -> impl IntoView {
             })}
         </div>
     };
-    var_name
+    user_add_action
 }
 
 #[component]
@@ -187,7 +187,7 @@ pub fn UserManagement() -> impl IntoView {
         <Title text="User Management | Lexodus"/>
         <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
         <Meta property="og:description" content="Manage users, roles, and permissions in the Lexodus."/>
-        <Default_Layout>
+        <DefaultLayout>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold">"User Management"</h2>
@@ -195,6 +195,6 @@ pub fn UserManagement() -> impl IntoView {
                 <UserList />
                 <CreateUserForm />
             </div>
-        </Default_Layout>
+        </DefaultLayout>
     }
 }
