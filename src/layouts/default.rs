@@ -24,8 +24,12 @@ pub fn DefaultLayout(children: Children) -> impl IntoView {
               </a>
               <a href="/users" class="icon-bar-item relative flex flex-col items-center">
                 <span class="material-icons text-2xl">settings</span>
-                  <span class="tooltip"></span>
+                  <span class="tooltip">settings</span>
               </a>
+                  <a href="/logout" class="icon-bar-item relative flex flex-col items-center">
+                    <span class="material-icons text-2xl">logout</span>
+                      <span class="tooltip">logout</span>
+                  </a>
           </div>
 
           // Page Layout with Live Feed as a Right Sidebar

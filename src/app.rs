@@ -40,9 +40,9 @@ pub fn App() -> impl IntoView {
       <Router>
         <main>
           <Routes>
-                   <Route path="/" view=Home/>
+          <Route path="/" view=Home/>
           <Route
-            path="/"
+            path="/login"
             view=move || {
                 view! { <Login action=auth_context.login/> }
             }

@@ -4,9 +4,8 @@ use crate::layouts::default::DefaultLayout;
 pub fn Home() -> impl IntoView {
     view! {
       <DefaultLayout>
-      <h1>Home</h1>
-      <a href="/cases">Cases</a>
-       <a href="/users">User</a>
+      <h1>Welcome to Lexodus</h1>
+
       </DefaultLayout>
 
     }

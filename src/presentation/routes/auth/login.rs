@@ -77,7 +77,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
                       <Show
                         when=move || user().is_some()
                       >
-                        <Redirect path="/case" />
+                        <Redirect path="/cases" />
                       </Show>
 
 

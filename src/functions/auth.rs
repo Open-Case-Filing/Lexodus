@@ -212,7 +212,7 @@ pub async fn logout() -> Result<(), ServerFnError> {
     res_parts.insert_header("Set-Cookie","Lexodus_session=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
 
     res_parts.insert_header("Set-Cookie","sessionid=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
-    leptos_spin::redirect("/login");
+    leptos_spin::redirect("/");
 
     Ok(())
 }
