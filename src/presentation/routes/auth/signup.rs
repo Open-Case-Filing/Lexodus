@@ -93,23 +93,6 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
                   class="w-full rounded border border-gray-500 px-2 py-1 text-lg"
                 />
               </div>
-            </div>
-            <button
-              type="submit"
-              class="w-full rounded bg-yellow-400  py-2 px-4 text-white dark:text-gray-700 hover:bg-yellow-600 focus:bg-yellow-500"
-            >
-              "Create Account"
-            </button>
-            <div class="flex items-center justify-center">
-              <div class="text-center text-sm text-gray-500">
-                "Already have an account?"
-                <a class="text-blue-500 underline" href="/signup">
-                  "Log in"
-                </a>
-              </div>
-            </div>
-          </ActionForm>
-        </div>
-      </div>
+
     }
 }
