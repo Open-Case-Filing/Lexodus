@@ -1,12 +1,12 @@
 
 use leptos::*;
-use leptos_router::ActionForm;
+use leptos_router::{ActionForm, use_navigate};
 use serde::{Deserialize, Serialize};
 use crate::layouts::default::*;
-use leptos_meta::Meta;
-use leptos_meta::Title;
+use leptos_meta::{Meta, Title};
 
 
+use crate::pages::parties::create::PartiesManagement;
 
 
 use cfg_if::cfg_if;
@@ -25,8 +25,12 @@ cfg_if! {
 #[component]
 pub fn CreateCaseForm() -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
-    let value = create_case.value();
+    let response = create_case.value();
 
+    let has_error = move || response.with(|val| matches!(val, Some(Err(_))));
+
+    let navigate = use_navigate();
+  let case_number = create_rw_signal(String::new());
     view! {
       // Section Container with Lexodus Style
       <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
@@ -100,14 +104,36 @@ pub fn CreateCaseForm() -> impl IntoView {
           </Show>
 
           // Feedback Message for Success or Error
-          {move || value.get().map(|result| match result {
-              Ok(case_number) => view! {
-                  <div class="mt-4 text-green-500">"Case added successfully. Case number: " {case_number}</div>
+          {move || response.get().map(|result| match result {
+              Ok(success_message) => {
+                  // Extract case number from success message
+                  if let Some(num) = success_message.split_whitespace().last() {
+                      case_number.set(num.to_string());
+                  }
+                  view! {
+                      <div class="mt-4 text-green-500">
+                          {success_message}
+                      </div>
+                  }
               },
               Err(e) => view! {
                   <div class="mt-4 text-red-500">{e.to_string()}</div>
               },
           })}
+
+          {move || has_error().then(|| view! {
+              <p class="error">"An error occurred while creating the case."</p>
+          })}
+
+          // Navigation after successful case creation
+          {move || {
+              let case_num = case_number.get();
+              if !case_num.is_empty() {
+                  // Navigate to the case detail page
+                  navigate(&format!("/cases/{}", case_num), Default::default());
+              }
+              view! {}
+          }}
       </section>
     }
 }
@@ -182,12 +208,18 @@ pub fn CaseManagement() -> impl IntoView {
         <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
         <Meta property="og:description" content="Add new cases and view existing cases in the Lexodus."/>
         <DefaultLayout>
+          <nav aria-label="Breadcrumb" class="mb-6 text-sm text-lexodus-600">
+              <a href="/" class="hover:underline focus:underline">Home </a> /
+              <a href="/cases" class="hover:underline focus:underline">Cases </a> /
+              <a href="/cases/new"><span class="text-lexodus-500"> New</span></a>
+          </nav>
             <div class="w-full p-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold">"Case Management"</h2>
                 </div>
                 <CaseList />
                 <CreateCaseForm />
+                <PartiesManagement case_id=1/>
             </div>
         </DefaultLayout>
     }

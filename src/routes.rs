@@ -1,18 +1,23 @@
+
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::pages::cases::*;
-use crate::pages::user_management::*;
-
 use crate::pages::cases::{
-    create::CaseManagement,
-    create::CreateCaseForm,
+    create_case::CaseManagement,
+    create_case::CreateCaseForm,
     list_case::ListCases,
     view_case::ViewCase,
     edit_case::EditCase,
     search_case::SearchCases,
 };
+use crate::pages::user_management::{
+  create::CreateUserForm,
+  create::UserList,
+  create::UserManagement
+};
+
+
 
 // auth
 use crate::providers::auth::{provide_auth, AuthContext};
@@ -22,7 +27,7 @@ use crate::presentation::routes::signup::Signup;
 use crate::pages::home::Home;
 
 #[component]
-pub fn App() -> impl IntoView {
+pub fn AppRouter() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
     provide_auth();
@@ -40,7 +45,7 @@ pub fn App() -> impl IntoView {
       <Router>
         <main>
           <Routes>
-                   <Route path="/" view=Home/>
+                   <Route path="/home" view=Home/>
           <Route
             path="/"
             view=move || {
@@ -55,7 +60,13 @@ pub fn App() -> impl IntoView {
               <Route path="search" view=SearchCases/>
           </Route>
             // <Route path="/case-management/activity" view=Activity/>
-            <Route path="/users" view=UserManagement/>
+            <Route path="users" view=UserManagement>
+              <Route path="" view=UserList/>
+              <Route path="new" view=CreateUserForm/>
+              <Route path=":id" view=ViewCase/>
+              <Route path=":id/edit" view=EditCase/>
+              <Route path="search" view=SearchCases/>
+            </Route>
             <Route path="/*any" view=NotFound/>
             <Route
               path="signup"

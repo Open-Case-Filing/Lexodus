@@ -10,7 +10,7 @@ pub fn DefaultLayout(children: Children) -> impl IntoView {
                   <span class="material-icons text-2xl">home</span>
                   <span class="tooltip">Home</span>
               </a>
-              <a href="/case" class="icon-bar-item relative flex flex-col items-center">
+              <a href="/cases" class="icon-bar-item relative flex flex-col items-center">
                   <span class="material-icons text-2xl">folder</span>
                   <span class="tooltip">Cases</span>
               </a>
@@ -47,10 +47,7 @@ pub fn DefaultLayout(children: Children) -> impl IntoView {
 
                   // Main Content Area
                   <main id="main-content" class="overflow-auto bg-lexodus-100 p-6">
-                      <nav aria-label="Breadcrumb" class="mb-6 text-sm text-lexodus-600">
-                          <a href="#" class="hover:underline focus:underline">Home</a> /
-                          <span class="text-lexodus-400">Cases</span>
-                      </nav>
+
 
 
                       <section class="mb-6 rounded-lg border border-lexodus-200 bg-white p-6 shadow-lg">

@@ -86,100 +86,91 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 
     Ok(users)
 }
-
 #[component]
 pub fn CreateUserForm() -> impl IntoView {
     let create_user = create_server_action::<CreateUser>();
-    let value = create_user.value();
+    let response = create_user.value();
 
-    let user_add_action = view! {
-        <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto outline outline-offset-2 outline-lexouds-500 mt-4">
-            <h3 class="text-lg font-semibold mb-4 text-gray-300">"Add New User"</h3>
+    let has_error = move || response.with(|val| matches!(val, Some(Err(_))));
+
+    view! {
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Add New User"</h3>
+
             <ActionForm action=create_user>
                 <div class="mb-4">
-                    <label for="username" class="block text-gray-400 mb-1">"Username:"</label>
-                    <input type="text" id="username" name="username" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
+                    <label for="username" class="block text-lexodus-700 mb-1">"Username:"</label>
+                    <input type="text" id="username" name="username" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
                 </div>
                 <div class="mb-4">
-                    <label for="password" class="block text-gray-400 mb-1">"Password:"</label>
-                    <input type="password" id="password" name="password" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
+                    <label for="password" class="block text-lexodus-700 mb-1">"Password:"</label>
+                    <input type="password" id="password" name="password" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
                 </div>
                 <div class="mb-4">
-                    <label for="role_id" class="block text-gray-400 mb-1">"Role ID:"</label>
-                    <input type="number" id="role_id" name="role_id" class="w-full px-4 py-2 bg-gray-800 text-white rounded focus:outline-none" required/>
+                    <label for="role_id" class="block text-lexodus-700 mb-1">"Role ID:"</label>
+                    <input type="number" id="role_id" name="role_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
                 </div>
-                <button type="submit" class="w-full px-4 py-2 bg-lexouds-500 text-gray-900 rounded font-semibold hover:bg-lexouds-600">"Add User"</button>
+                <button type="submit" class="w-full px-4 py-2 bg-lexodus-500 text-white rounded font-semibold hover:bg-lexodus-600 focus:outline-none focus:ring-2 focus:ring-lexodus-500">"Add User"</button>
             </ActionForm>
+
             <Show
                 when=move || create_user.pending().get()
                 fallback=|| view! { <div></div> }
             >
-                <div class="mt-4 text-gray-400">"Adding user..."</div>
+                <div class="mt-4 text-lexodus-700">"Adding user..."</div>
             </Show>
-            {move || value.get().map(|result| match result {
-                Ok(message) => view! { <div class="mt-4 text-green-400">{message}</div> },
-                Err(e) => view! { <div class="mt-4 text-red-400">{e.to_string()}</div> },
+
+            {move || response.get().map(|result| match result {
+                Ok(message) => view! { <div class="mt-4 text-green-500">{message}</div> },
+                Err(e) => view! { <div class="mt-4 text-red-500">{e.to_string()}</div> },
             })}
-        </div>
-    };
-    user_add_action
-}
 
-#[component]
-pub fn UserList() -> impl IntoView {
-    let (refresh_trigger, _set_refresh_trigger) = create_signal(0);
-    let users = create_resource(
-        move || refresh_trigger.get(),
-        |_| async move { get_users().await },
-    );
-    let (user_trigger, _set_user_trigger) = create_signal(users.get());
-
-    view! {
-      <Transition
-          fallback=move || view! { <p>"Loading users..."</p> }
-      >
-          <div class="bg-gray-800 p-6 rounded-lg outline outline-offset-2 outline-lexouds-500 mt-4">
-              <h3 class="text-lg font-semibold mb-4 text-gray-300">"Existing Users"</h3>
-              <div class="overflow-x-auto">
-                  <table class="min-w-full bg-gray-800 text-gray-300 hover:table-fixed">
-                      <thead>
-                          <tr>
-                              <th class="px-4 py-2 text-left text-gray-400">"ID"</th>
-                              <th class="px-4 py-2 text-left text-gray-400">"Username"</th>
-                              <th class="px-4 py-2 text-left text-gray-400">"Role ID"</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          <Suspense fallback=move || view! { <tr><td colspan="3" class="text-center">"Loading..."</td></tr> }>
-                          {move || user_trigger.get().map(|result| match result {
-                              Ok(users) => view! {
-                                  <For
-                                      each=move || users.clone()
-                                      key=|user| user.id.clone()
-                                      children=move |user| {
-                                          view! {
-                                              <tr class="hover:bg-lexouds-100 hover:text-gray-900">
-                                                  <td class="border-t border-gray-700 px-4 py-2">{user.id}</td>
-                                                  <td class="border-t border-gray-700 px-4 py-2">{user.username}</td>
-                                                  <td class="border-t border-gray-700 px-4 py-2">{user.role_id}</td>
-                                              </tr>
-                                          }
-                                      }
-                                  />
-                              }.into_view(),
-                              Err(_) => view! {
-                                  <tr><td colspan="3" class="text-center text-red-400">"Error loading users"</td></tr>
-                              }.into_view(),
-                          })}
-                          </Suspense>
-                      </tbody>
-                  </table>
-              </div>
-          </div>
-      </Transition>
+            {move || has_error().then(|| view! {
+                <p class="mt-4 text-red-500">"An error occurred while creating the user."</p>
+            })}
+        </section>
     }
 }
+#[component]
+pub fn UserList() -> impl IntoView {
+    let users = create_resource(|| (), |_| get_users());
 
+    view! {
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+            <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Users"</h2>
+
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"ID"</th>
+                        <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Username"</th>
+                        <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Role ID"</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Suspense fallback=move || view! { <tr><td colspan="3" class="text-center py-4">"Loading..."</td></tr> }>
+                    {move || users.get().map(|result| match result {
+                        Ok(users) => users.into_iter().map(|user| {
+                            view! {
+                                <tr class="hover:bg-lexodus-50">
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{user.id}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{user.username}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{user.role_id}</td>
+                                </tr>
+                            }
+                        }).collect_view(),
+                        Err(e) => view! {
+                            <tr>
+                                <td colspan="3" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
+                            </tr>
+                        }.into_view(),
+                    })}
+                    </Suspense>
+                </tbody>
+            </table>
+        </section>
+    }
+}
 #[component]
 pub fn UserManagement() -> impl IntoView {
     view! {
@@ -188,12 +179,14 @@ pub fn UserManagement() -> impl IntoView {
         <Meta name="description" content="User management interface for OCFS with options to add, edit, and delete users."/>
         <Meta property="og:description" content="Manage users, roles, and permissions in the Lexodus."/>
         <DefaultLayout>
-            <div class="w-full p-8">
+            <div class="w-full p-8 bg-lexodus-50">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-semibold">"User Management"</h2>
+                    <h2 class="text-2xl font-semibold text-lexodus-800">"User Management"</h2>
                 </div>
-                <UserList />
-                <CreateUserForm />
+                <div class="space-y-6">
+                    <UserList />
+                    <CreateUserForm />
+                </div>
             </div>
         </DefaultLayout>
     }

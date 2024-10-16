@@ -1,13 +1,13 @@
 use leptos::*;
-
+use crate::layouts::default::DefaultLayout;
 #[component]
 pub fn Home() -> impl IntoView {
     view! {
-      <div>
+      <DefaultLayout>
       <h1>Home</h1>
-      <a href="/case">Cases</a>
-       <a href="/user">User</a>
-      </div>
+      <a href="/cases">Cases</a>
+       <a href="/users">User</a>
+      </DefaultLayout>
 
     }
 }
