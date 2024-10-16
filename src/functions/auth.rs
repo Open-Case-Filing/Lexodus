@@ -188,7 +188,7 @@ pub async fn signup(
 
     };
 
-    leptos_spin::redirect("/case");
+    leptos_spin::redirect("/cases");
 
 
     Ok(())
