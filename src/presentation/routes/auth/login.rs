@@ -16,7 +16,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
       <Meta property="og:description" content="Login to the site"/>
 
 
-        <div class="bg-gradient-to-r from-lexouds-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
+        <div class="bg-gradient-to-r from-lexodus-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-extrabold text-white mb-2">"Lexodus"</h1>
             <p class="text-lg text-gray-300">"Enhancing judicial efficiency through technology"</p>
