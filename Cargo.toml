@@ -22,7 +22,7 @@ serde = "1.0.192"
 serde_json = "1.0"
 tracing = "0.1.40"
 spin-sdk = { version = "3", optional = true }
-wasm-bindgen = { version = "0.2.92", optional = true }
+wasm-bindgen = { version = "=0.2.93", optional = true }
 # Date Time Utils
 chrono = { version = "0.4.33", features = ["serde"] }
 colored = "2.0.0"
