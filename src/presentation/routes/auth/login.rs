@@ -59,7 +59,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
                 <a rel="external" class="text-blue-500 underline" href="/signup">
                   "Sign up"
                 </a>
-                <a rel="external" class="text-blue-500 underline" href="/dashboard/overview">
+                <a rel="external" class="text-blue-500 underline" href="/cases">
                   "Already logged in?"
                 </a>
 
