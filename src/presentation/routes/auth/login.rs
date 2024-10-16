@@ -6,7 +6,7 @@ use crate::providers::auth::AuthContext;
 #[component]
 pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) -> impl IntoView {
   let login_user = create_server_action::<Login>();
-  let login_value = login_user.value();
+  let _login_value = login_user.value();
   let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
 
     view! {
@@ -16,7 +16,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
       <Meta property="og:description" content="Login to the site"/>
 
 
-        <div class="bg-gradient-to-r from-cyan-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
+        <div class="bg-gradient-to-r from-lexodus-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-extrabold text-white mb-2">"Lexodus"</h1>
             <p class="text-lg text-gray-300">"Enhancing judicial efficiency through technology"</p>
@@ -59,7 +59,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
                 <a rel="external" class="text-blue-500 underline" href="/signup">
                   "Sign up"
                 </a>
-                <a rel="external" class="text-blue-500 underline" href="/dashboard/overview">
+                <a rel="external" class="text-blue-500 underline" href="/cases">
                   "Already logged in?"
                 </a>
 
@@ -77,7 +77,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
                       <Show
                         when=move || user().is_some()
                       >
-                        <Redirect path="/dashboard/overview" />
+                        <Redirect path="/cases" />
                       </Show>
 
 

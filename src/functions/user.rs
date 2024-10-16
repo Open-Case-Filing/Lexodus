@@ -17,11 +17,9 @@ pub async fn get_user() -> Result<Option<User>, ServerFnError> {
         return Err(ServerFnError::MissingArg("Missing Request".to_string()));
     };
     let con = con()?;
-    // Redirect all non logged in users to Nedry!
     let user = match auth_session(&req, &con).await {
         Ok(u)=> Some(u),
         Err(_) => {
-        //leptos_spin::redirect("/nedry");
         None
         }
     };

@@ -71,19 +71,24 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
   // store.migrate().await.expect("Failed to migrate sessions!");
   let store = SqliteStore::from_connection(sqlite_connection.clone());
    store.migrate().await.expect("Failed to migrate sessions!");
-    // Register server functions
-    register_explicit::<crate::functions::save_count::SaveCount>();
-    register_explicit::<crate::services::case_service::SearchCases>();
+// Register server functions
+// Case Management
     register_explicit::<crate::pages::cases::CreateCase>();
     register_explicit::<crate::pages::cases::GetCases>();
+// User Role Management
     register_explicit::<crate::pages::user_management::CreateUser>();
     register_explicit::<crate::pages::user_management::GetUsers>();
+// Auth
     register_explicit::<crate::functions::auth::Login>();
     register_explicit::<crate::functions::auth::Logout>();
     register_explicit::<crate::functions::auth::Signup>();
     register_explicit::<crate::functions::user::GetUser>();
     register_explicit::<crate::functions::user::GetSafeUser>();
-    register_explicit::<crate::services::get_action::GetActionMenuData>();
+// Parties
+    register_explicit::<crate::pages::parties::AddParty>();
+    register_explicit::<crate::pages::parties::GetParties>();
+
+
     render_best_match_to_stream_with_context(
         req,
         resp_out,

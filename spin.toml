@@ -32,7 +32,7 @@ sqlite_databases = ["default"]
 
 
 [component.lexodus.build]
-command = "cargo leptos build --release && cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
+command = "cargo leptos build --release && LEPTOS_OUTPUT_NAME=lexodus cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
 watch = ["src/**/*.rs", "Cargo.toml"]
 
 
@@ -67,12 +67,12 @@ files = [{ source = "public/fonts", destination = "/" }]
 
 
 [[trigger.http]]
-route = "/img/..."
+route = "/images/..."
 component = "images"
 
 [component.images]
 source = "wasi/spin-fileserver/spin_static_fs.wasm"
-files = [{ source = "public/img", destination = "/" }]
+files = [{ source = "public/images", destination = "/" }]
 
 
 [component.lexodus.variables]

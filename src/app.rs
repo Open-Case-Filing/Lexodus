@@ -4,15 +4,22 @@ use leptos_router::*;
 
 use crate::pages::cases::*;
 use crate::pages::user_management::*;
-use crate::pages::changelog::Changelog;
-use crate::pages::dashboard::Dashboard;
-use crate::pages::login::Login as Home;
+
+use crate::pages::cases::{
+    create::CaseManagement,
+    create::CreateCaseForm,
+    list_case::ListCases,
+    view_case::ViewCase,
+    edit_case::EditCase,
+    search_case::SearchCases,
+};
 
 // auth
 use crate::providers::auth::{provide_auth, AuthContext};
 use crate::presentation::routes::logout::Logout;
 use crate::presentation::routes::login::Login;
 use crate::presentation::routes::signup::Signup;
+use crate::pages::home::Home;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -25,21 +32,30 @@ pub fn App() -> impl IntoView {
     view! {
       <Stylesheet id="leptos" href="/pkg/lexodus.css"/>
 
+      <Link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Merriweather:wght@700&display=swap" rel="stylesheet" />
+      <Link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+
       // content for this welcome page
       <Router>
         <main>
           <Routes>
+          <Route path="/" view=Home/>
           <Route
-            path="/"
+            path="/login"
             view=move || {
                 view! { <Login action=auth_context.login/> }
             }
           />
-            <Route path="/dashboard/overview" view=Dashboard/>
-            <Route path="/case-management" view=CaseManagement/>
-            <Route path="/changelog" view=Changelog/>
+          <Route path="cases" view=CaseManagement>
+              <Route path="" view=ListCases/>
+              <Route path="new" view=CreateCaseForm/>
+              <Route path=":id" view=ViewCase/>
+              <Route path=":id/edit" view=EditCase/>
+              <Route path="search" view=SearchCases/>
+          </Route>
             // <Route path="/case-management/activity" view=Activity/>
-            <Route path="/user-management" view=UserManagement/>
+            <Route path="/users" view=UserManagement/>
             <Route path="/*any" view=NotFound/>
             <Route
               path="signup"

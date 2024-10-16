@@ -67,12 +67,13 @@ impl From<serde_wasm_bindgen::Error> for LexodusAppError {
 }
 }
 }
-//impl From<ServerFnError> for ServerFnError<LexodusAppError> {
-//    fn from(err: LexodusAppError) -> Self {
-//        server_fn_error!(err)
-//    }
-//}
-//
+
+// impl From<LexodusAppError> for ServerFnError {
+//     fn from(err: LexodusAppError) -> Self {
+//         ServerFnError::ServerError(err.to_string())
+//     }
+// }
+
 cfg_if! {
     if #[cfg(feature = "ssr")] {
         impl From<argon2::password_hash::Error> for LexodusAppError {
