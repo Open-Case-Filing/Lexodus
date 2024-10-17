@@ -13,18 +13,18 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
             property="og:image"
             content="/images/lexodus.jpg"
         />
-        <div class="bg-gradient-to-r from-lexodus-800 to-blue-900 flex items-center justify-center min-h-screen flex-col">
+        <div class="bg-lexodus-100 flex items-center justify-center min-h-screen flex-col">
             <div class="text-center mb-8">
-                <h1 class="text-4xl font-extrabold text-white mb-2">"Lexodus"</h1>
-                <p class="text-lg text-gray-300">"Enhancing judicial efficiency through technology"</p>
+                <h1 class="text-4xl font-extrabold test-lexodus-800  mb-2">"Lexodus"</h1>
+                <p class="text-lg text-gray-600">"Enhancing judicial efficiency through technology"</p>
             </div>
-            <div class="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg p-8 rounded-lg shadow-lg w-full max-w-sm">
+            <div class="bg-white bg-lexodus-300 backdrop-filter backdrop-blur-lg p-8 rounded-lg shadow-lg w-full max-w-sm">
                 <h2 class="text-2xl font-bold mb-6 text-center text-white">"Sign Up"</h2>
                 <ActionForm action=action class="space-y-6">
                     <div class="mb-4">
                         <label
                             for="username"
-                            class="block text-white text-sm font-bold mb-2"
+                            class="block text-lexodus-800  text-sm font-bold mb-2"
                         >
                             "Username"
                         </label>
@@ -43,7 +43,7 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
                     <div class="mb-4">
                         <label
                             for="display_name"
-                            class="block text-white text-sm font-bold mb-2"
+                            class="block text-lexodus-800  text-sm font-bold mb-2"
                         >
                             "Displayed Name"
                         </label>
@@ -62,7 +62,7 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
                     <div class="mb-4">
                         <label
                             for="password"
-                            class="block text-white text-sm font-bold mb-2"
+                            class="block text-lexodus-800  text-sm font-bold mb-2"
                         >
                             "Password"
                         </label>
@@ -80,7 +80,7 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
                     <div class="mb-4">
                         <label
                             for="password_confirmation"
-                            class="block text-white text-sm font-bold mb-2"
+                            class="block text-lexodus-800  text-sm font-bold mb-2"
                         >
                             "Confirm Password"
                         </label>
@@ -97,15 +97,15 @@ pub fn Signup(action: Action<Signup, Result<(), ServerFnError>>) -> impl IntoVie
                     </div>
                     <button
                         type="submit"
-                        class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        class="bg-lexodus-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     >
                         "Sign Up"
                     </button>
                     <div class="flex items-center justify-between">
-                        <div class="text-center text-sm text-gray-300">
+                        <div class="text-center text-sm text-gray-500">
                             "Already have an account?"
                         </div>
-                        <a rel="external" class="text-blue-300 hover:text-blue-100 underline" href="/login">
+                        <a rel="external" class="text-lexodus-500 hover:text-blue-100 underline" href="/login">
                             "Log in"
                         </a>
                     </div>
