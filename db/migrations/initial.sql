@@ -1034,3 +1034,6 @@ ON CONFLICT (name) DO NOTHING;
  ((SELECT id FROM roles WHERE name = 'admin'), (SELECT id FROM permissions WHERE name = 'manage_users')),
  ((SELECT id FROM roles WHERE name = 'admin'), (SELECT id FROM permissions WHERE name = 'generate_reports'))
  ON CONFLICT DO NOTHING;
+
+
+ ALTER TABLE cases ALTER COLUMN judge_id DROP NOT NULL;

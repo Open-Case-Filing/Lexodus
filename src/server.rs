@@ -75,6 +75,9 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
 // Case Management
     register_explicit::<crate::pages::cases::CreateCase>();
     register_explicit::<crate::pages::cases::GetCases>();
+    register_explicit::<crate::pages::cases::UpdateCaseStatus>();
+    register_explicit::<crate::pages::cases::GetJudges>();
+    register_explicit::<crate::pages::cases::GetCourts>();
 // User Role Management
     register_explicit::<crate::pages::user_management::CreateUser>();
     register_explicit::<crate::pages::user_management::GetUsers>();
