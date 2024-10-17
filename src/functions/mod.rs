@@ -3,9 +3,9 @@
 pub mod auth;
 pub mod user;
 
+use crate::errors::LexodusAppError;
 use cfg_if::cfg_if;
 use leptos::server_fn::server_fn_error;
-use crate::errors::LexodusAppError;
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {

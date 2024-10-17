@@ -6,20 +6,16 @@ use crate::pages::cases::*;
 use crate::pages::user_management::*;
 
 use crate::pages::cases::{
-    create::CaseManagement,
-    create::CreateCaseForm,
-    list_case::ListCases,
-    view_case::ViewCase,
-    edit_case::EditCase,
-    search_case::SearchCases,
+    create::CaseManagement, create::CreateCaseForm, edit_case::EditCase, list_case::ListCases,
+    search_case::SearchCases, view_case::ViewCase,
 };
 
 // auth
-use crate::providers::auth::{provide_auth, AuthContext};
-use crate::presentation::routes::logout::Logout;
-use crate::presentation::routes::login::Login;
-use crate::presentation::routes::signup::Signup;
 use crate::pages::home::Home;
+use crate::presentation::routes::login::Login;
+use crate::presentation::routes::logout::Logout;
+use crate::presentation::routes::signup::Signup;
+use crate::providers::auth::{provide_auth, AuthContext};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -27,7 +23,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
     provide_auth();
     let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
-
 
     view! {
       <Stylesheet id="leptos" href="/pkg/lexodus.css"/>

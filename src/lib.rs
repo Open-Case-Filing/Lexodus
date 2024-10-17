@@ -7,11 +7,11 @@ mod pages;
 
 mod domain;
 mod errors;
-mod session;
-mod providers;
 mod presentation;
+mod providers;
 #[cfg(feature = "ssr")]
 mod server;
+mod session;
 
 use cfg_if::cfg_if;
 

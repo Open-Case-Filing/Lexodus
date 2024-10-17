@@ -1,7 +1,4 @@
-
 use serde::{Deserialize, Serialize};
-
-
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CaseNotification {
@@ -9,5 +6,5 @@ pub struct CaseNotification {
     pub case_name: String,
     pub date: String,
     pub message: String,
-    pub  status: String,
+    pub status: String,
 }

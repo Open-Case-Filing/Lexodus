@@ -1,6 +1,6 @@
+use crate::domain::models::user::SafeUser;
 use crate::functions::auth::{Login, Logout, Signup};
 use crate::functions::user::get_safe_user;
-use crate::domain::models::user::SafeUser;
 use leptos::*;
 
 #[derive(Clone)]

@@ -1,6 +1,6 @@
 use crate::domain::models::user::{SafeUser, User};
 use cfg_if::cfg_if;
-use leptos::{server, use_context, expect_context, ServerFnError};
+use leptos::{expect_context, server, use_context, ServerFnError};
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
@@ -18,10 +18,8 @@ pub async fn get_user() -> Result<Option<User>, ServerFnError> {
     };
     let con = con()?;
     let user = match auth_session(&req, &con).await {
-        Ok(u)=> Some(u),
-        Err(_) => {
-        None
-        }
+        Ok(u) => Some(u),
+        Err(_) => None,
     };
     Ok(user)
 }
@@ -37,14 +35,8 @@ pub async fn get_safe_user() -> Result<Option<SafeUser>, ServerFnError> {
 
     // Redirect all non logged in users to Nedry!
     let safe_user = match auth_session(&req, &con).await {
-        Ok(u) => {
-          Some(u.into())
-
-        },
-        Err(_) => {
-
-        None
-        }
+        Ok(u) => Some(u.into()),
+        Err(_) => None,
     };
 
     Ok(safe_user)

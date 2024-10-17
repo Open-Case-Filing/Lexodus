@@ -1,13 +1,10 @@
-
-use leptos::*;
-use leptos_router::{ActionForm, use_navigate};
-use serde::{Deserialize, Serialize};
 use crate::layouts::default::*;
+use leptos::*;
 use leptos_meta::{Meta, Title};
-
+use leptos_router::{use_navigate, ActionForm};
+use serde::{Deserialize, Serialize};
 
 use crate::pages::parties::create::PartiesManagement;
-
 
 use cfg_if::cfg_if;
 
@@ -20,7 +17,6 @@ cfg_if! {
 
     }
 }
-
 
 #[component]
 pub fn CreateCaseForm() -> impl IntoView {
@@ -109,60 +105,60 @@ pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
     view! {
-        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
-            <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
+    <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+        <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
 
-            <table class="min-w-full bg-white">
-            <thead>
-                <tr>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge"</th>
-                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Actions"</th>
-                </tr>
-            </thead>
-                <tbody>
-                    <Suspense fallback=move || view! { <tr><td colspan="5" class="text-center py-4">"Loading..."</td></tr> }>
-                    {move || cases.get().map(|result| match result {
-                        Ok(cases) => cases.into_iter().map(|case| {
-                            view! {
-                                <tr class="hover:bg-lexodus-50">
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.status}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.court_name}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_name}</td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">
-                                        {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
-                                    </td>
-                                    <td class="py-2 px-4 border-b text-lexodus-800">
-                                        <button class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
-                                                on:click=move |_| {
-                                                    // TODO: Implement view case details
-                                                }>
-                                            "View"
-                                        </button>
-                                    </td>
-                                </tr>
-                                                                }
-                                                 }).collect_view(),
-                                 Err(e) => view! {
-                                       <tr>
-                                             <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
-                                         </tr>
-                                   }.into_view(),
-                             })}
-                             </Suspense>
-                         </tbody>
-                     </table>
-                  </section>
-                                        }
+        <table class="min-w-full bg-white">
+        <thead>
+            <tr>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge"</th>
+                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Actions"</th>
+            </tr>
+        </thead>
+            <tbody>
+                <Suspense fallback=move || view! { <tr><td colspan="5" class="text-center py-4">"Loading..."</td></tr> }>
+                {move || cases.get().map(|result| match result {
+                    Ok(cases) => cases.into_iter().map(|case| {
+                        view! {
+                            <tr class="hover:bg-lexodus-50">
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.status}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.court_name}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_name}</td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">
+                                    {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
+                                </td>
+                                <td class="py-2 px-4 border-b text-lexodus-800">
+                                    <button class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
+                                            on:click=move |_| {
+                                                // TODO: Implement view case details
+                                            }>
+                                        "View"
+                                    </button>
+                                </td>
+                            </tr>
+                                                            }
+                                             }).collect_view(),
+                             Err(e) => view! {
+                                   <tr>
+                                         <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
+                                     </tr>
+                               }.into_view(),
+                         })}
+                         </Suspense>
+                     </tbody>
+                 </table>
+              </section>
                                     }
+}
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
@@ -185,7 +181,6 @@ pub fn CaseManagement() -> impl IntoView {
     }
 }
 
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Case {
     pub id: i64,
@@ -201,14 +196,12 @@ pub struct Case {
     pub judge_name: Option<String>,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Judge {
     pub id: i64,
     pub name: String,
     pub court_id: i64,
 }
-
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Court {
@@ -217,7 +210,6 @@ pub struct Court {
     pub district: String,
     pub circuit: String,
 }
-
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
@@ -273,7 +265,6 @@ pub async fn create_case(
     }
 }
 
-
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
     let db_url = variables::get("db_url").unwrap();
@@ -292,53 +283,51 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
     let cases: Vec<Case> = rowset
         .rows
         .iter()
-        .map(|row| {
-            Case {
-                id: match &row[0] {
-                    DbValue::Int64(id) => *id,
-                    _ => 0,
-                },
-                case_number: match &row[1] {
-                    DbValue::Str(case_number) => case_number.clone(),
-                    _ => String::new(),
-                },
-                title: match &row[2] {
-                    DbValue::Str(title) => title.clone(),
-                    _ => String::new(),
-                },
-                status: match &row[3] {
-                    DbValue::Str(status) => status.clone(),
-                    _ => String::new(),
-                },
-                filed_date: match &row[4] {
-                    DbValue::Str(filed_date) => filed_date.clone(),
-                    _ => String::new(),
-                },
-                court_id: match &row[5] {
-                    DbValue::Int64(court_id) => *court_id,
-                    _ => 0,
-                },
-                court_name: match &row[6] {
-                    DbValue::Str(court_name) => court_name.clone(),
-                    _ => String::new(),
-                },
-                current_court_id: match &row[7] {
-                    DbValue::Int64(current_court_id) => *current_court_id,
-                    _ => 0,
-                },
-                current_court_name: match &row[8] {
-                    DbValue::Str(current_court_name) => current_court_name.clone(),
-                    _ => String::new(),
-                },
-                judge_id: match &row[9] {
-                    DbValue::Int64(judge_id) => Some(*judge_id),
-                    _ => None,
-                },
-                judge_name: match &row[10] {
-                    DbValue::Str(judge_name) => Some(judge_name.clone()),
-                    _ => None,
-                },
-            }
+        .map(|row| Case {
+            id: match &row[0] {
+                DbValue::Int64(id) => *id,
+                _ => 0,
+            },
+            case_number: match &row[1] {
+                DbValue::Str(case_number) => case_number.clone(),
+                _ => String::new(),
+            },
+            title: match &row[2] {
+                DbValue::Str(title) => title.clone(),
+                _ => String::new(),
+            },
+            status: match &row[3] {
+                DbValue::Str(status) => status.clone(),
+                _ => String::new(),
+            },
+            filed_date: match &row[4] {
+                DbValue::Str(filed_date) => filed_date.clone(),
+                _ => String::new(),
+            },
+            court_id: match &row[5] {
+                DbValue::Int64(court_id) => *court_id,
+                _ => 0,
+            },
+            court_name: match &row[6] {
+                DbValue::Str(court_name) => court_name.clone(),
+                _ => String::new(),
+            },
+            current_court_id: match &row[7] {
+                DbValue::Int64(current_court_id) => *current_court_id,
+                _ => 0,
+            },
+            current_court_name: match &row[8] {
+                DbValue::Str(current_court_name) => current_court_name.clone(),
+                _ => String::new(),
+            },
+            judge_id: match &row[9] {
+                DbValue::Int64(judge_id) => Some(*judge_id),
+                _ => None,
+            },
+            judge_name: match &row[10] {
+                DbValue::Str(judge_name) => Some(judge_name.clone()),
+                _ => None,
+            },
         })
         .collect();
 
@@ -361,14 +350,16 @@ pub async fn update_case_status(case_id: i64, new_status: String) -> Result<Stri
     );
 
     match execute_result {
-        Ok(rows_affected) => Ok(format!("Case status updated successfully: {}", rows_affected)),
+        Ok(rows_affected) => Ok(format!(
+            "Case status updated successfully: {}",
+            rows_affected
+        )),
         Err(e) => Err(ServerFnError::ServerError(format!(
             "Failed to update case status: {}",
             e
         ))),
     }
 }
-
 
 #[server(GetJudges, "/api")]
 pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
@@ -381,21 +372,19 @@ pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
     let judges: Vec<Judge> = rowset
         .rows
         .iter()
-        .map(|row| {
-            Judge {
-                id: match &row[0] {
-                    DbValue::Int64(id) => *id,
-                    _ => 0,
-                },
-                name: match &row[1] {
-                    DbValue::Str(name) => name.clone(),
-                    _ => String::new(),
-                },
-                court_id: match &row[2] {
-                    DbValue::Int64(court_id) => *court_id,
-                    _ => 0,
-                },
-            }
+        .map(|row| Judge {
+            id: match &row[0] {
+                DbValue::Int64(id) => *id,
+                _ => 0,
+            },
+            name: match &row[1] {
+                DbValue::Str(name) => name.clone(),
+                _ => String::new(),
+            },
+            court_id: match &row[2] {
+                DbValue::Int64(court_id) => *court_id,
+                _ => 0,
+            },
         })
         .collect();
 
@@ -413,25 +402,23 @@ pub async fn get_courts() -> Result<Vec<Court>, ServerFnError> {
     let courts: Vec<Court> = rowset
         .rows
         .iter()
-        .map(|row| {
-            Court {
-                id: match &row[0] {
-                    DbValue::Int64(id) => *id,
-                    _ => 0,
-                },
-                name: match &row[1] {
-                    DbValue::Str(name) => name.clone(),
-                    _ => String::new(),
-                },
-                district: match &row[2] {
-                    DbValue::Str(district) => district.clone(),
-                    _ => String::new(),
-                },
-                circuit: match &row[3] {
-                    DbValue::Str(circuit) => circuit.clone(),
-                    _ => String::new(),
-                },
-            }
+        .map(|row| Court {
+            id: match &row[0] {
+                DbValue::Int64(id) => *id,
+                _ => 0,
+            },
+            name: match &row[1] {
+                DbValue::Str(name) => name.clone(),
+                _ => String::new(),
+            },
+            district: match &row[2] {
+                DbValue::Str(district) => district.clone(),
+                _ => String::new(),
+            },
+            circuit: match &row[3] {
+                DbValue::Str(circuit) => circuit.clone(),
+                _ => String::new(),
+            },
         })
         .collect();
 

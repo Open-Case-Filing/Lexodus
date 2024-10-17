@@ -1,5 +1,5 @@
-use http::status::StatusCode;
 use cfg_if::cfg_if;
+use http::status::StatusCode;
 use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumString;
