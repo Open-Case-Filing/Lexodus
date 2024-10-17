@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
-use cfg_if::cfg_if;
-use leptos::{use_context, expect_context, ServerFnError};
 use crate::domain::models::user::User;
+use cfg_if::cfg_if;
 use leptos::server;
+use leptos::{expect_context, use_context, ServerFnError};
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
@@ -185,11 +185,9 @@ pub async fn signup(
     {
         Some(u) => u,
         None => return Err(LexodusAppError::AuthError.into()),
-
     };
 
     leptos_spin::redirect("/cases");
-
 
     Ok(())
 }
@@ -202,16 +200,22 @@ pub async fn logout() -> Result<(), ServerFnError> {
         return Ok(());
     };
     let con = con()?;
-    let Some(session) = get_session_cookie_value(&req)? else{
+    let Some(session) = get_session_cookie_value(&req)? else {
         return Ok(());
     };
     logout_session(&session).await?;
 
     // Delete session cookie by expiring it
     let res_parts = expect_context::<ResponseOptions>();
-    res_parts.insert_header("Set-Cookie","Lexodus_session=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
+    res_parts.insert_header(
+        "Set-Cookie",
+        "Lexodus_session=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;",
+    );
 
-    res_parts.insert_header("Set-Cookie","sessionid=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;");
+    res_parts.insert_header(
+        "Set-Cookie",
+        "sessionid=no;Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;",
+    );
     leptos_spin::redirect("/");
 
     Ok(())

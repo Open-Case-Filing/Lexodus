@@ -119,29 +119,27 @@ pub async fn get_parties(case_id: i64) -> Result<Vec<Party>, ServerFnError> {
     let parties: Vec<Party> = rowset
         .rows
         .iter()
-        .map(|row| {
-            Party {
-                id: match &row[0] {
-                    DbValue::Int64(id) => *id,
-                    _ => 0,
-                },
-                name: match &row[1] {
-                    DbValue::Str(name) => name.clone(),
-                    _ => String::new(),
-                },
-                role: match &row[2] {
-                    DbValue::Str(role) => role.clone(),
-                    _ => String::new(),
-                },
-                attorney_name: match &row[3] {
-                    DbValue::Str(attorney_name) => attorney_name.clone(),
-                    _ => String::new(),
-                },
-                case_filed_date: match &row[4] {
-                    DbValue::Str(date) => date.clone(),
-                    _ => String::new(),
-                },
-            }
+        .map(|row| Party {
+            id: match &row[0] {
+                DbValue::Int64(id) => *id,
+                _ => 0,
+            },
+            name: match &row[1] {
+                DbValue::Str(name) => name.clone(),
+                _ => String::new(),
+            },
+            role: match &row[2] {
+                DbValue::Str(role) => role.clone(),
+                _ => String::new(),
+            },
+            attorney_name: match &row[3] {
+                DbValue::Str(attorney_name) => attorney_name.clone(),
+                _ => String::new(),
+            },
+            case_filed_date: match &row[4] {
+                DbValue::Str(date) => date.clone(),
+                _ => String::new(),
+            },
         })
         .collect();
 
@@ -149,7 +147,13 @@ pub async fn get_parties(case_id: i64) -> Result<Vec<Party>, ServerFnError> {
 }
 
 #[server(AddParty, "/api")]
-pub async fn add_party(case_id: i64, name: String, role: String, attorney_id: Option<i64>, case_filed_date: String) -> Result<String, ServerFnError> {
+pub async fn add_party(
+    case_id: i64,
+    name: String,
+    role: String,
+    attorney_id: Option<i64>,
+    case_filed_date: String,
+) -> Result<String, ServerFnError> {
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
@@ -170,7 +174,10 @@ pub async fn add_party(case_id: i64, name: String, role: String, attorney_id: Op
         Ok(rows_affected) => {
             println!("Rows affected: {}", rows_affected);
             Ok(format!("Party added successfully: {}", rows_affected))
-        },
-        Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
+        }
+        Err(e) => Err(ServerFnError::ServerError(format!(
+            "Failed to execute SQL: {}",
+            e
+        ))),
     }
 }

@@ -1,14 +1,12 @@
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 
-
 cfg_if! {
     if #[cfg(feature = "ssr")] {
 use crate::errors::LexodusAppError;
 use std::sync::Arc;
 use chrono::{DateTime, Utc};
     }}
-
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct User {

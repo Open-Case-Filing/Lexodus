@@ -1,13 +1,13 @@
-use crate::functions::{self,auth::Login};
+use crate::functions::{self, auth::Login};
+use crate::providers::auth::AuthContext;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-use crate::providers::auth::AuthContext;
 #[component]
 pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) -> impl IntoView {
-  let login_user = create_server_action::<Login>();
-  let _login_value = login_user.value();
-  let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+    let login_user = create_server_action::<Login>();
+    let _login_value = login_user.value();
+    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
 
     view! {
       <Meta property="og:title" content="Login"/>

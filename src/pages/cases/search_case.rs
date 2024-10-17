@@ -1,7 +1,7 @@
+use crate::layouts::default::DefaultLayout;
 use leptos::*;
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-use crate::layouts::default::DefaultLayout;
 
 #[component]
 pub fn SearchCases() -> impl IntoView {

@@ -1,7 +1,6 @@
 use leptos::*;
 use leptos_router::*;
-use serde::{Serialize, Deserialize};
-
+use serde::{Deserialize, Serialize};
 
 use crate::layouts::default::DefaultLayout;
 #[derive(Params, PartialEq, Clone)]
@@ -12,20 +11,24 @@ struct CaseParams {
 #[component]
 pub fn ViewCase() -> impl IntoView {
     let params = use_params::<CaseParams>();
-    let case_id = move || params.with(|p| p.as_ref().ok().and_then(|p| p.id.clone()).unwrap_or_default());
+    let case_id = move || {
+        params.with(|p| {
+            p.as_ref()
+                .ok()
+                .and_then(|p| p.id.clone())
+                .unwrap_or_default()
+        })
+    };
 
-    let case_details = create_resource(
-        case_id,
-        move |id| async move {
-            match get_case_details(id).await {
-                Ok(details) => Ok(details),
-                Err(err) => {
-                    log::error!("Error fetching case details: {:?}", err);
-                    Err(err)
-                }
+    let case_details = create_resource(case_id, move |id| async move {
+        match get_case_details(id).await {
+            Ok(details) => Ok(details),
+            Err(err) => {
+                log::error!("Error fetching case details: {:?}", err);
+                Err(err)
             }
         }
-    );
+    });
 
     view! {
         <DefaultLayout>
