@@ -160,24 +160,101 @@ pub fn CaseList() -> impl IntoView {
                                     }
 }
 
+
+
+
 #[component]
 pub fn CaseManagement() -> impl IntoView {
+    let (show_form, set_show_form) = create_signal(false);
+
     view! {
         <Meta property="og:title" content="Case Management | Lexodus"/>
         <Title text="Case Management | Lexodus"/>
-        <Meta name="description" content="Case management interface for Lexodus with options to create and view cases."/>
-        <Meta property="og:description" content="Manage legal cases in the Lexodus system."/>
+        <Meta name="description" content="Efficient case management interface for Lexodus"/>
+        <Meta property="og:description" content="Manage legal cases efficiently in the Lexodus system"/>
         <DefaultLayout>
             <div class="w-full p-8 bg-lexodus-50">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-semibold text-lexodus-800">"Case Management"</h2>
+                    <button
+                        class="bg-lexodus-600 text-white px-4 py-2 rounded hover:bg-lexodus-700"
+                        on:click=move |_| set_show_form.update(|v| *v = !*v)
+
+                    >
+                        "Create New Case"
+                    </button>
                 </div>
-                <div class="space-y-6">
+
+                <div class=move || format!("form-container {}", if show_form.get() { "visible" } else { "" })>
                     <CreateCaseForm />
-                    <CaseList />
                 </div>
+
+                <CaseList />
             </div>
         </DefaultLayout>
+    }
+}
+
+
+#[component]
+fn QuickActions() -> impl IntoView {
+    view! {
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-4">"Quick Actions"</h3>
+            <div class="space-y-2">
+                <a href="/cases/file-motion" class="block w-full py-2 px-4 bg-lexodus-500 text-white text-center rounded hover:bg-lexodus-600">"File a Motion"</a>
+                <a href="/cases/schedule-hearing" class="block w-full py-2 px-4 bg-lexodus-500 text-white text-center rounded hover:bg-lexodus-600">"Schedule a Hearing"</a>
+                <a href="/cases/upload-document" class="block w-full py-2 px-4 bg-lexodus-500 text-white text-center rounded hover:bg-lexodus-600">"Upload Document"</a>
+            </div>
+        </section>
+    }
+}
+
+#[component]
+fn UpcomingEvents() -> impl IntoView {
+    view! {
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-4">"Upcoming Events"</h3>
+            <ul class="space-y-4">
+                <EventItem date="2023-09-01" event="Status Conference" />
+                <EventItem date="2023-09-15" event="Pretrial Hearing" />
+                <EventItem date="2023-10-01" event="Trial Start Date" />
+            </ul>
+        </section>
+    }
+}
+
+#[component]
+fn EventItem(date: &'static str, event: &'static str) -> impl IntoView {
+    view! {
+        <li class="flex items-center">
+            <div class="w-16 text-sm text-lexodus-600">{date}</div>
+            <div class="flex-grow font-medium">{event}</div>
+        </li>
+    }
+}
+
+#[component]
+fn RecentActivity() -> impl IntoView {
+    view! {
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-4">"Recent Activity"</h3>
+            <ul class="space-y-4">
+                <ActivityItem action="Document Filed" details="Motion for Summary Judgment" />
+                <ActivityItem action="Hearing Scheduled" details="Status Conference on 2023-09-01" />
+                <ActivityItem action="Order Issued" details="Motion to Compel Discovery Granted" />
+            </ul>
+        </section>
+    }
+}
+
+#[component]
+fn ActivityItem(action: &'static str, details: &'static str) -> impl IntoView {
+    view! {
+        <li>
+            <p class="font-medium">{action}</p>
+            <p class="text-sm text-lexodus-600">{details}</p>
+        </li>
     }
 }
 
