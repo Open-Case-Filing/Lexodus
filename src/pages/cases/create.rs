@@ -27,114 +27,80 @@ pub fn CreateCaseForm() -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
     let response = create_case.value();
 
-    let has_error = move || response.with(|val| matches!(val, Some(Err(_))));
+    let judges = create_resource(|| (), |_| get_judges());
+    let courts = create_resource(|| (), |_| get_courts());
 
-    let navigate = use_navigate();
-  let case_number = create_rw_signal(String::new());
     view! {
-      // Section Container with Lexodus Style
-      <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
-          <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Add New Case"</h3>
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Create New Case"</h3>
 
-          // Form for Adding New Case
-          <ActionForm action=create_case>
+            <ActionForm action=create_case>
+                <div class="mb-4">
+                    <label for="case_number" class="block text-lexodus-700 mb-1">"Case Number:"</label>
+                    <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+                </div>
+                <div class="mb-4">
+                    <label for="title" class="block text-lexodus-700 mb-1">"Title:"</label>
+                    <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+                </div>
+                <div class="mb-4">
+                    <label for="status" class="block text-lexodus-700 mb-1">"Status:"</label>
+                    <select id="status" name="status" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required>
+                        <option value="Open">"Open"</option>
+                        <option value="Closed">"Closed"</option>
+                        <option value="Pending">"Pending"</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="filed_date" class="block text-lexodus-700 mb-1">"Filed Date:"</label>
+                    <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
+                </div>
+                <div class="mb-4">
+                    <label for="court_id" class="block text-lexodus-700 mb-1">"Court:"</label>
+                    <select id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required>
+                        <Suspense fallback=move || view! { <option>"Loading courts..."</option> }>
+                            {move || courts.get().map(|result| match result {
+                                Ok(courts) => courts.into_iter().map(|court| {
+                                    view! {
+                                        <option value={court.id.to_string()}>{court.name} " - " {court.district}</option>
+                                    }
+                                }).collect_view(),
+                                Err(_) => view! { <option>"Failed to load courts"</option> }.into_view(),
+                            })}
+                        </Suspense>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="judge_id" class="block text-lexodus-700 mb-1">"Judge (Optional):"</label>
+                    <select id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500">
+                        <option value="">"No judge assigned"</option>
+                        <Suspense fallback=move || view! { <option>"Loading judges..."</option> }>
+                            {move || judges.get().map(|result| match result {
+                                Ok(judges) => judges.into_iter().map(|judge| {
+                                    view! {
+                                        <option value={judge.id.to_string()}>{judge.name}</option>
+                                    }
+                                }).collect_view(),
+                                Err(_) => view! { <option>"Failed to load judges"</option> }.into_view(),
+                            })}
+                        </Suspense>
+                    </select>
+                </div>
+                <button type="submit" class="w-full px-4 py-2 bg-lexodus-500 text-white rounded font-semibold hover:bg-lexodus-600 focus:outline-none focus:ring-2 focus:ring-lexodus-500">"Create Case"</button>
+            </ActionForm>
 
-              // Case Number Input
-              <div class="mb-4">
-                  <label for="case_number" class="block text-lexodus-700 mb-1">"Case Number:"</label>
-                  <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-              </div>
+            <Show
+                when=move || create_case.pending().get()
+                fallback=|| view! { <div></div> }
+            >
+                <div class="mt-4 text-lexodus-700">"Creating case..."</div>
+            </Show>
 
-              // Title Input
-              <div class="mb-4">
-                  <label for="title" class="block text-lexodus-700 mb-1">"Title:"</label>
-                  <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-              </div>
-
-              // Status Dropdown
-              <div class="mb-4">
-                  <label for="status" class="block text-lexodus-700 mb-1">"Status:"</label>
-                  <select id="status" name="status" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required>
-                      <option value="Open">"Open"</option>
-                      <option value="Closed">"Closed"</option>
-                      <option value="Pending">"Pending"</option>
-                  </select>
-              </div>
-
-              // Filed Date Input
-              <div class="mb-4">
-                  <label for="filed_date" class="block text-lexodus-700 mb-1">"Filed Date:"</label>
-                  <input type="date" id="filed_date" name="filed_date" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-              </div>
-
-              // Closed Date Input
-              <div class="mb-4">
-                  <label for="closed_date" class="block text-lexodus-700 mb-1">"Closed Date:"</label>
-                  <input type="date" id="closed_date" name="closed_date" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500"/>
-              </div>
-
-              // Court ID Input
-              <div class="mb-4">
-                  <label for="court_id" class="block text-lexodus-700 mb-1">"Court ID:"</label>
-                  <input type="number" id="court_id" name="court_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-              </div>
-
-              // Current Court ID Input
-              <div class="mb-4">
-                  <label for="current_court_id" class="block text-lexodus-700 mb-1">"Current Court ID:"</label>
-                  <input type="number" id="current_court_id" name="current_court_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-              </div>
-
-              // Judge ID Input
-              <div class="mb-4">
-                  <label for="judge_id" class="block text-lexodus-700 mb-1">"Judge ID:"</label>
-                  <input type="number" id="judge_id" name="judge_id" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500"/>
-              </div>
-
-              // Submit Button
-              <button type="submit" class="w-full px-4 py-2 bg-lexodus-500 text-white rounded font-semibold hover:bg-lexodus-600 focus:outline-none focus:ring-2 focus:ring-lexodus-500">"Add Case"</button>
-          </ActionForm>
-
-          // Loading State for Form Submission
-          <Show
-              when=move || create_case.pending().get()
-              fallback=|| view! { <div></div> }
-          >
-              <div class="mt-4 text-lexodus-700">"Adding case..."</div>
-          </Show>
-
-          // Feedback Message for Success or Error
-          {move || response.get().map(|result| match result {
-              Ok(success_message) => {
-                  // Extract case number from success message
-                  if let Some(num) = success_message.split_whitespace().last() {
-                      case_number.set(num.to_string());
-                  }
-                  view! {
-                      <div class="mt-4 text-green-500">
-                          {success_message}
-                      </div>
-                  }
-              },
-              Err(e) => view! {
-                  <div class="mt-4 text-red-500">{e.to_string()}</div>
-              },
-          })}
-
-          {move || has_error().then(|| view! {
-              <p class="error">"An error occurred while creating the case."</p>
-          })}
-
-          // Navigation after successful case creation
-          {move || {
-              let case_num = case_number.get();
-              if !case_num.is_empty() {
-                  // Navigate to the case detail page
-                  navigate(&format!("/cases/{}", case_num), Default::default());
-              }
-              view! {}
-          }}
-      </section>
+            {move || response.get().map(|result| match result {
+                Ok(message) => view! { <div class="mt-4 text-green-500">{message}</div> },
+                Err(e) => view! { <div class="mt-4 text-red-500">{e.to_string()}</div> },
+            })}
+        </section>
     }
 }
 
@@ -143,101 +109,115 @@ pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
     view! {
-              // Outer Container for Existing Cases
-              <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
-                  <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
+        <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
+            <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
 
-                  // Table for Case Data
-                  <table class="min-w-full bg-white">
-                      <thead>
-                          <tr>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court ID"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court ID"</th>
-                              <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge ID"</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          // Dynamically Render Cases or Show Error
-                          {move || cases.get().map(|result| match result {
-                              Ok(cases) => cases.into_iter().map(|case| {
-                                  let case = case.clone();
-                                  view! {
-                                      // Table Row with Hover Effect
-                                      <tr class="hover:bg-lexodus-50">
-                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">
-                                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                  {case.status}
-                                              </span>
-                                          </td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.court_id}</td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_id}</td>
-                                          <td class="py-2 px-4 border-b text-lexodus-800">
-                                              {case.judge_id.map_or_else(|| "-".to_string(), |id| id.to_string())}
-                                          </td>
-                                      </tr>
-                                  }
-                              }).collect_view(),
-
-                              // Error Row for Failed Case Retrieval
-                              Err(e) => view! {
-                                  <tr>
-                                      <td colspan="7" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
-                                  </tr>
-                              }.into_view(),
-                          })}
-                      </tbody>
-                  </table>
-              </section>
-          }
-      }
-
-
+            <table class="min-w-full bg-white">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge"</th>
+                    <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Actions"</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <Suspense fallback=move || view! { <tr><td colspan="5" class="text-center py-4">"Loading..."</td></tr> }>
+                    {move || cases.get().map(|result| match result {
+                        Ok(cases) => cases.into_iter().map(|case| {
+                            view! {
+                                <tr class="hover:bg-lexodus-50">
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.status}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.court_name}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_name}</td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">
+                                        {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
+                                    </td>
+                                    <td class="py-2 px-4 border-b text-lexodus-800">
+                                        <button class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
+                                                on:click=move |_| {
+                                                    // TODO: Implement view case details
+                                                }>
+                                            "View"
+                                        </button>
+                                    </td>
+                                </tr>
+                                                                }
+                                                 }).collect_view(),
+                                 Err(e) => view! {
+                                       <tr>
+                                             <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
+                                         </tr>
+                                   }.into_view(),
+                             })}
+                             </Suspense>
+                         </tbody>
+                     </table>
+                  </section>
+                                        }
+                                    }
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
     view! {
         <Meta property="og:title" content="Case Management | Lexodus"/>
         <Title text="Case Management | Lexodus"/>
-        <Meta name="description" content="Case management interface for OCFS with options to add, view, and manage cases."/>
-        <Meta property="og:description" content="Add new cases and view existing cases in the Lexodus."/>
+        <Meta name="description" content="Case management interface for Lexodus with options to create and view cases."/>
+        <Meta property="og:description" content="Manage legal cases in the Lexodus system."/>
         <DefaultLayout>
-          <nav aria-label="Breadcrumb" class="mb-6 text-sm text-lexodus-600">
-              <a href="/" class="hover:underline focus:underline">Home </a> /
-              <a href="/cases" class="hover:underline focus:underline">Cases </a> /
-              <a href="/cases/new"><span class="text-lexodus-500"> New</span></a>
-          </nav>
-            <div class="w-full p-8">
+            <div class="w-full p-8 bg-lexodus-50">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-semibold">"Case Management"</h2>
+                    <h2 class="text-2xl font-semibold text-lexodus-800">"Case Management"</h2>
                 </div>
-                <CaseList />
-                <CreateCaseForm />
-                <PartiesManagement case_id=1/>
+                <div class="space-y-6">
+                    <CreateCaseForm />
+                    <CaseList />
+                </div>
             </div>
         </DefaultLayout>
     }
 }
 
 
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Case {
-    case_number: String,
-    title: String,
-    status: String,
-    filed_date: String,
-    closed_date: Option<String>,
-    court_id: i64,
-    current_court_id: i64,
-    judge_id: Option<i64>,
+    pub id: i64,
+    pub case_number: String,
+    pub title: String,
+    pub status: String,
+    pub filed_date: String,
+    pub court_id: i64,
+    pub court_name: String,
+    pub current_court_id: i64,
+    pub current_court_name: String,
+    pub judge_id: Option<i64>,
+    pub judge_name: Option<String>,
 }
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Judge {
+    pub id: i64,
+    pub name: String,
+    pub court_id: i64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Court {
+    pub id: i64,
+    pub name: String,
+    pub district: String,
+    pub circuit: String,
+}
+
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
@@ -245,93 +225,215 @@ pub async fn create_case(
     title: String,
     status: String,
     filed_date: String,
-    closed_date: Option<String>,
     court_id: i64,
-    current_court_id: i64,
     judge_id: Option<i64>,
 ) -> Result<String, ServerFnError> {
-    println!("--> Adding a new case: {}", filed_date);
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
-    let sql = "INSERT INTO cases (case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+    let sql = if judge_id.is_some() {
+        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id)
+         VALUES ($1, $2, $3, $4, $5, $5, $6)"
+    } else {
+        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id)
+         VALUES ($1, $2, $3, $4, $5, $5)"
+    };
 
-    let execute_result = conn.execute(
-        sql,
-        &[
-            ParameterValue::Str(case_number),
-            ParameterValue::Str(title),
-            ParameterValue::Str(status),
-            ParameterValue::Str(filed_date),
-            closed_date.map(ParameterValue::Str).unwrap_or(ParameterValue::DbNull),
-            ParameterValue::Int64(court_id),
-            ParameterValue::Int64(current_court_id),
-            judge_id.map(ParameterValue::Int64).unwrap_or(ParameterValue::DbNull),
-        ],
-    );
+    let execute_result = if let Some(judge) = judge_id {
+        conn.execute(
+            sql,
+            &[
+                ParameterValue::Str(case_number),
+                ParameterValue::Str(title),
+                ParameterValue::Str(status),
+                ParameterValue::Str(filed_date),
+                ParameterValue::Int64(court_id),
+                ParameterValue::Int64(judge),
+            ],
+        )
+    } else {
+        conn.execute(
+            sql,
+            &[
+                ParameterValue::Str(case_number),
+                ParameterValue::Str(title),
+                ParameterValue::Str(status),
+                ParameterValue::Str(filed_date),
+                ParameterValue::Int64(court_id),
+            ],
+        )
+    };
 
     match execute_result {
-        Ok(rows_affected) => {
-            println!("Rows affected: {}", rows_affected);
-            Ok(format!("Case added successfully: {}", rows_affected))
-        },
-        Err(e) => Err(ServerFnError::ServerError(format!("Failed to execute SQL: {}", e)))
+        Ok(rows_affected) => Ok(format!("Case created successfully: {}", rows_affected)),
+        Err(e) => Err(ServerFnError::ServerError(format!(
+            "Failed to create case: {}",
+            e
+        ))),
     }
 }
 
 
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
-  let db_url = variables::get("db_url").unwrap();
-  let conn = Connection::open(&db_url)?;
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
 
-  let sql = "SELECT case_number, title, status, filed_date, closed_date, court_id, current_court_id, judge_id FROM cases";
+    let sql = "SELECT c.id, c.case_number, c.title, c.status, c.filed_date,
+               c.court_id, co.name as court_name,
+               c.current_court_id, cco.name as current_court_name,
+               c.judge_id, j.name as judge_name
+               FROM cases c
+               LEFT JOIN courts co ON c.court_id = co.id
+               LEFT JOIN courts cco ON c.current_court_id = cco.id
+               LEFT JOIN judges j ON c.judge_id = j.id";
 
-  let rowset = conn.query(sql, &[])?;
-  let cases: Vec<Case> = rowset
-      .rows
-      .iter()
-      .map(|row| {
-          Case {
-              case_number: match &row[0] {
-                  DbValue::Str(case_number) => case_number.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              title: match &row[1] {
-                  DbValue::Str(title) => title.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              status: match &row[2] {
-                  DbValue::Str(status) => status.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              filed_date: match &row[3] {
-                  DbValue::Str(filed_date) => filed_date.clone(),
-                  _ => String::new(), // Default value if not a String
-              },
-              closed_date: match &row[4] {
-                  DbValue::Str(closed_date) => Some(closed_date.clone()),
-                  DbValue::DbNull => None,
-                  _ => None, // Default to None if not a String or Null
-              },
-              court_id: match &row[5] {
-                  DbValue::Int64(court_id) => *court_id,
-                  _ => 0, // Default value if not an Int64
-              },
-              current_court_id: match &row[6] {
-                  DbValue::Int64(current_court_id) => *current_court_id,
-                  _ => 0, // Default value if not an Int64
-              },
-              judge_id: match &row[7] {
-                  DbValue::Int64(judge_id) => Some(*judge_id),
-                  DbValue::DbNull => None,
-                  _ => None, // Default to None if not an Int64 or Null
-              },
-          }
-      })
-      .collect();
+    let rowset = conn.query(sql, &[])?;
+    let cases: Vec<Case> = rowset
+        .rows
+        .iter()
+        .map(|row| {
+            Case {
+                id: match &row[0] {
+                    DbValue::Int64(id) => *id,
+                    _ => 0,
+                },
+                case_number: match &row[1] {
+                    DbValue::Str(case_number) => case_number.clone(),
+                    _ => String::new(),
+                },
+                title: match &row[2] {
+                    DbValue::Str(title) => title.clone(),
+                    _ => String::new(),
+                },
+                status: match &row[3] {
+                    DbValue::Str(status) => status.clone(),
+                    _ => String::new(),
+                },
+                filed_date: match &row[4] {
+                    DbValue::Str(filed_date) => filed_date.clone(),
+                    _ => String::new(),
+                },
+                court_id: match &row[5] {
+                    DbValue::Int64(court_id) => *court_id,
+                    _ => 0,
+                },
+                court_name: match &row[6] {
+                    DbValue::Str(court_name) => court_name.clone(),
+                    _ => String::new(),
+                },
+                current_court_id: match &row[7] {
+                    DbValue::Int64(current_court_id) => *current_court_id,
+                    _ => 0,
+                },
+                current_court_name: match &row[8] {
+                    DbValue::Str(current_court_name) => current_court_name.clone(),
+                    _ => String::new(),
+                },
+                judge_id: match &row[9] {
+                    DbValue::Int64(judge_id) => Some(*judge_id),
+                    _ => None,
+                },
+                judge_name: match &row[10] {
+                    DbValue::Str(judge_name) => Some(judge_name.clone()),
+                    _ => None,
+                },
+            }
+        })
+        .collect();
 
-  Ok(cases)
+    Ok(cases)
+}
 
+#[server(UpdateCaseStatus, "/api")]
+pub async fn update_case_status(case_id: i64, new_status: String) -> Result<String, ServerFnError> {
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
+
+    let sql = "UPDATE cases SET status = $1 WHERE id = $2";
+
+    let execute_result = conn.execute(
+        sql,
+        &[
+            ParameterValue::Str(new_status),
+            ParameterValue::Int64(case_id),
+        ],
+    );
+
+    match execute_result {
+        Ok(rows_affected) => Ok(format!("Case status updated successfully: {}", rows_affected)),
+        Err(e) => Err(ServerFnError::ServerError(format!(
+            "Failed to update case status: {}",
+            e
+        ))),
+    }
+}
+
+
+#[server(GetJudges, "/api")]
+pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
+
+    let sql = "SELECT id, name, court_id FROM judges";
+
+    let rowset = conn.query(sql, &[])?;
+    let judges: Vec<Judge> = rowset
+        .rows
+        .iter()
+        .map(|row| {
+            Judge {
+                id: match &row[0] {
+                    DbValue::Int64(id) => *id,
+                    _ => 0,
+                },
+                name: match &row[1] {
+                    DbValue::Str(name) => name.clone(),
+                    _ => String::new(),
+                },
+                court_id: match &row[2] {
+                    DbValue::Int64(court_id) => *court_id,
+                    _ => 0,
+                },
+            }
+        })
+        .collect();
+
+    Ok(judges)
+}
+
+#[server(GetCourts, "/api")]
+pub async fn get_courts() -> Result<Vec<Court>, ServerFnError> {
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
+
+    let sql = "SELECT id, name, district, circuit FROM courts";
+
+    let rowset = conn.query(sql, &[])?;
+    let courts: Vec<Court> = rowset
+        .rows
+        .iter()
+        .map(|row| {
+            Court {
+                id: match &row[0] {
+                    DbValue::Int64(id) => *id,
+                    _ => 0,
+                },
+                name: match &row[1] {
+                    DbValue::Str(name) => name.clone(),
+                    _ => String::new(),
+                },
+                district: match &row[2] {
+                    DbValue::Str(district) => district.clone(),
+                    _ => String::new(),
+                },
+                circuit: match &row[3] {
+                    DbValue::Str(circuit) => circuit.clone(),
+                    _ => String::new(),
+                },
+            }
+        })
+        .collect();
+
+    Ok(courts)
 }
