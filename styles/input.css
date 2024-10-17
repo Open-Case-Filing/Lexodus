@@ -1,10 +1,14 @@
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base styles */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
+
+/* Tooltip styles */
 .tooltip {
   position: absolute;
   left: 100%;
@@ -17,42 +21,64 @@ body {
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
 }
+
 .icon-bar-item:hover .tooltip {
   opacity: 1;
 }
 
-  .tab-content {
-      display: none;
-  }
-  #activity-tab:checked ~ #activity-content,
-  #chat-tab:checked ~ #chat-content {
-      display: block;
-  }
-  #activity-tab:checked ~ .tab-labels .activity-label,
-  #chat-tab:checked ~ .tab-labels .chat-label {
-      border-bottom: 2px solid #2522FC;
-      color: #2522FC;
-  }
-    #activity-tab:checked ~ .tab-content #activity-content,
-#chat-tab:checked ~ .tab-content #chat-content {
-display: block;
-}
-#chat-tab:checked ~ .tab-content #activity-content,
-#activity-tab:checked ~ .tab-content #chat-content {
-display: none;
-}
-#activity-tab:checked ~ div label[for="activity-tab"],
-#chat-tab:checked ~ div label[for="chat-tab"] {
-border-bottom: 2px solid #475569;
-color: #475569;
+/* Tab content styles */
+.tab-content {
+  display: none;
 }
 
+#activity-tab:checked ~ #activity-content,
+#chat-tab:checked ~ #chat-content {
+  display: block;
+}
+
+#activity-tab:checked ~ .tab-labels .activity-label,
+#chat-tab:checked ~ .tab-labels .chat-label {
+  border-bottom: 2px solid #2522fc;
+  color: #2522fc;
+}
+
+#activity-tab:checked ~ .tab-content #activity-content,
+#chat-tab:checked ~ .tab-content #chat-content {
+  display: block;
+}
+
+#chat-tab:checked ~ .tab-content #activity-content,
+#activity-tab:checked ~ .tab-content #chat-content {
+  display: none;
+}
+
+#activity-tab:checked ~ div label[for="activity-tab"],
+#chat-tab:checked ~ div label[for="chat-tab"] {
+  border-bottom: 2px solid #475569;
+  color: #475569;
+}
+
+/* Toggle switch styles */
 #show-reason-toggle:checked + label .dot {
   transform: translateX(100%);
 }
+
 #show-reason-toggle:checked + label + .reason-content {
   display: block;
 }
+
 #show-reason-toggle:checked + label div {
   background-color: #3b82f6;
+}
+
+/* Form container transition styles */
+.form-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.form-container.visible {
+  max-height: 1000px; /* Adjust this value based on your form's maximum height */
+  transition: max-height 0.5s ease-in;
 }
