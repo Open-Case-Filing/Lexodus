@@ -105,9 +105,9 @@ pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
     view! {
-    <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
-        <h2 class="text-xl font-semibold text-lexodus-800 mb-6">"Existing Cases"</h2>
-
+    <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative-mx-2 md:mx-0">
+       <h3 class="text-xl font-semibold text-lexodus-800 mb-4 px-2 md:px-0">Existing Cases</h3>
+        <div class="overflow-x-auto">
         <table class="min-w-full bg-white">
         <thead>
             <tr>
@@ -127,16 +127,16 @@ pub fn CaseList() -> impl IntoView {
                     Ok(cases) => cases.into_iter().map(|case| {
                         view! {
                             <tr class="hover:bg-lexodus-50">
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.case_number}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.title}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.status}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.filed_date}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.court_name}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">{case.current_court_name}</td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.case_number}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.title}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.status}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.filed_date}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.court_name}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.current_court_name}</td>
+                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">
                                     {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
                                 </td>
-                                <td class="py-2 px-4 border-b text-lexodus-800">
+                                <td class="py-2 px-3 border-b text-sm text-lexodus-800">
                                     <button class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
                                             on:click=move |_| {
                                                 // TODO: Implement view case details
@@ -156,6 +156,7 @@ pub fn CaseList() -> impl IntoView {
                          </Suspense>
                      </tbody>
                  </table>
+                 </div>
               </section>
                                     }
 }

@@ -82,3 +82,16 @@ body {
   max-height: 1000px; /* Adjust this value based on your form's maximum height */
   transition: max-height 0.5s ease-in;
 }
+
+#menu-toggle:checked + nav {
+    display: block;
+}
+#menu-toggle:not(:checked) + nav {
+    display: none;
+}
+@media (min-width: 768px) {
+    #menu-toggle:checked + nav,
+    #menu-toggle:not(:checked) + nav {
+        display: none;
+    }
+}

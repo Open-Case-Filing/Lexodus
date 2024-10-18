@@ -3,67 +3,98 @@ use leptos::*;
 #[component]
 pub fn DefaultLayout(children: Children) -> impl IntoView {
     view! {
-      <div class="flex bg-lexodus-100 text-lexodus-900">
-          // Global Vertical Icon Bar
-          <div class="fixed flex h-screen w-16 flex-col items-center space-y-6 bg-lexodus-900 p-3 py-4 text-lexodus-200 hover:bg-lexodus-950">
-              <a href="/" class="icon-bar-item relative flex flex-col items-center">
-                  <span class="material-icons text-2xl">home</span>
-                  <span class="tooltip">Home</span>
-              </a>
-              <a href="/cases" class="icon-bar-item relative flex flex-col items-center">
-                  <span class="material-icons text-2xl">folder</span>
-                  <span class="tooltip">Cases</span>
-              </a>
-              <a href="/calendar" class="icon-bar-item relative flex flex-col items-center">
-                  <span class="material-icons text-2xl">calendar_today</span>
-                  <span class="tooltip">Calendar</span>
-              </a>
-              <a href="/documents" class="icon-bar-item relative flex flex-col items-center">
-                  <span class="material-icons text-2xl">description</span>
-                  <span class="tooltip">Documents</span>
-              </a>
-              <a href="/users" class="icon-bar-item relative flex flex-col items-center">
-                <span class="material-icons text-2xl">settings</span>
-                  <span class="tooltip">settings</span>
-              </a>
-                  <a href="/logout" class="icon-bar-item relative flex flex-col items-center">
-                    <span class="material-icons text-2xl">logout</span>
-                      <span class="tooltip">logout</span>
-                  </a>
-          </div>
-
-          // Page Layout with Live Feed as a Right Sidebar
-          <div class="flex flex-1">
-
-              // Main Content Wrapper (Shifted Right by Icon Bar Width)
-              <div class="ml-16 flex flex-1 flex-col">
-
-                  // Header Section for Notifications
-                  <header class="flex items-center justify-between bg-white p-4 shadow-md">
+      <div class="flex min-h-screen flex-col bg-lexodus-100 text-lexodus-900">
+          // Lexodus Header with Notifications and Hamburger Menu
+          <header class="bg-white shadow-md">
+              <div class="flex items-center justify-between p-4">
+                  <div class="flex items-center">
+                      // Mobile menu button (visible only on mobile, now on the left)
+                      <label for="menu-toggle" class="md:hidden cursor-pointer mr-4">
+                          <span class="material-icons text-2xl text-lexodus-600">menu</span>
+                      </label>
                       <h1 class="text-2xl font-bold text-lexodus-800">Lexodus</h1>
-                      <div class="relative">
-                          <button aria-label="Notifications" class="focus:outline-none">
-                              <span class="material-icons text-2xl text-lexodus-600">notifications</span>
-                              <span class="absolute right-0 top-0 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">3</span>
-                          </button>
-                      </div>
-                  </header>
-
-                  // Main Content Area
-                  <main id="main-content" class="overflow-auto bg-lexodus-100 p-6">
-
-
-
-                      <section class="mb-6 rounded-lg border border-lexodus-200 bg-white p-6 shadow-lg">
-                        {children()}
-                        </section>
-                  </main>
+                  </div>
+                  <div class="relative">
+                      <button aria-label="Notifications" class="focus:outline-none">
+                          <span class="material-icons text-2xl text-lexodus-600">notifications</span>
+                          <span class="absolute right-0 top-0 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">3</span>
+                      </button>
+                  </div>
               </div>
+          </header>
 
-              //  <!-- Live Feed Sidebar on the Right -->
-               <aside class="w-64 overflow-y-auto border-l border-lexodus-200 bg-white p-4">
-                 <h2 class="mb-4 text-xl font-semibold text-lexodus-800">Recent Activity</h2>
-                 <ul class="space-y-4">
+          // Hidden checkbox for CSS-only dropdown
+          <input type="checkbox" id="menu-toggle" class="hidden" />
+
+          // Top navigation for mobile (full-width and dropdown)
+          <nav class="bg-lexodus-900 md:hidden overflow-x-auto whitespace-nowrap">
+               <ul class="flex">
+                   <li><a href="/" class="inline-flex items-center p-4 text-lexodus-200">
+                       <span class="material-icons mr-2">home</span>
+                       <span>Home</span>
+                   </a></li>
+                   <li><a href="/cases" class="inline-flex items-center p-4 text-lexodus-200">
+                       <span class="material-icons mr-2">folder</span>
+                       <span>Cases</span>
+                   </a></li>
+                   <li><a href="/calendar" class="inline-flex items-center p-4 text-lexodus-200">
+                       <span class="material-icons mr-2">calendar_today</span>
+                       <span>Calendar</span>
+                   </a></li>
+                   <li><a href="/documents" class="inline-flex items-center p-4 text-lexodus-200">
+                       <span class="material-icons mr-2">description</span>
+                       <span>Docs</span>
+                   </a></li>
+                   <li><a href="#" class="inline-flex items-center p-4 text-lexodus-200">
+                       <span class="material-icons mr-2">more_horiz</span>
+                       <span>More</span>
+                   </a></li>
+               </ul>
+           </nav>
+
+           <div class="flex flex-1">
+                 // Global Vertical Icon Bar (hidden on mobile)
+                 <div class="hidden md:flex md:w-16 md:flex-col md:items-center md:space-y-6 md:bg-lexodus-900 md:p-3 md:py-4 md:text-lexodus-200 md:hover:bg-lexodus-950">
+                     <a href="/" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">home</span>
+                         <span class="tooltip">Home</span>
+                     </a>
+                     <a href="/cases" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">folder</span>
+                         <span class="tooltip">Cases</span>
+                     </a>
+                     <a href="/calendar" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">calendar_today</span>
+                         <span class="tooltip">Calendar</span>
+                     </a>
+                     <a href="/documents" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">description</span>
+                         <span class="tooltip">Documents</span>
+                     </a>
+                     <a href="/users" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">settings</span>
+                         <span class="tooltip">settings</span>
+                     </a>
+                     <a href="/logout" class="icon-bar-item relative flex flex-col items-center">
+                         <span class="material-icons text-2xl">logout</span>
+                         <span class="tooltip">logout</span>
+                     </a>
+                 </div>
+
+                 // Main Content Wrapper
+                 <div class="flex flex-1 flex-col md:ml-16">
+                     // Main Content Area
+                     <main id="main-content" class="flex-grow overflow-auto bg-lexodus-100 p-6">
+                         <section class="mb-6 rounded-lg border border-lexodus-200 bg-white p-6 shadow-lg">
+                             {children()}
+                         </section>
+                     </main>
+                 </div>
+
+                 // Live Feed Sidebar on the Right (hidden on mobile)
+                 <aside class="hidden md:block md:w-64 md:overflow-y-auto md:border-l md:border-lexodus-200 md:bg-white md:p-4">
+                     <h2 class="mb-4 text-xl font-semibold text-lexodus-800">Recent Activity</h2>
+                     <ul class="space-y-4">
                   //  <!-- Chat message with refined action toggles -->
                    <li class="rounded bg-lexodus-50 p-3 shadow">
                      <div class="mb-2 flex items-center">
