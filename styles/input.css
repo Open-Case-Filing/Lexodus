@@ -83,6 +83,7 @@ body {
   transition: max-height 0.5s ease-in;
 }
 
+
 #menu-toggle:checked + nav {
     display: block;
 }
@@ -95,3 +96,4 @@ body {
         display: none;
     }
 }
+
