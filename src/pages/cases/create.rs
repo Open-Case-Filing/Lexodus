@@ -127,102 +127,116 @@ pub fn CreateCaseForm() -> impl IntoView {
     }
 }
 
+
+
+
+
 #[component]
 pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
 
     view! {
-    <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative-mx-2 md:mx-0">
-       <h3 class="text-xl font-semibold text-lexodus-800 mb-4 px-2 md:px-0">Existing Cases</h3>
-        <div class="overflow-x-auto">
-        <table class="min-w-full bg-white">
-        <thead>
-            <tr>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge"</th>
-                <th class="py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Actions"</th>
-            </tr>
-        </thead>
-            <tbody>
-                <Suspense fallback=move || view! { <tr><td colspan="5" class="text-center py-4">"Loading..."</td></tr> }>
-                {move || cases.get().map(|result| match result {
-                    Ok(cases) => cases.into_iter().map(|case| {
-                        view! {
-                            <tr class="hover:bg-lexodus-50">
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.case_number}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.title}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.status}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.filed_date}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.court_name}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.current_court_name}</td>
-                                <td class="py-2 px-3 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">
-                                    {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
-                                </td>
-                                <td class="py-2 px-3 border-b text-sm text-lexodus-800">
-                                    <button class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
-                                            on:click=move |_| {
-                                                // TODO: Implement view case details
-                                            }>
-                                        "View"
-                                    </button>
-                                </td>
+        <div class="mt-8 -mx-4 sm:mx-0">
+            <h3 class="text-xl font-semibold text-lexodus-800 mb-4 px-4 sm:px-0">"Existing Cases"</h3>
+            <div class="bg-white shadow-lg border border-lexodus-200 overflow-hidden sm:rounded-lg">
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-white table-auto">
+                        <thead>
+                            <tr>
+                                <th class="py-2 pl-4 pr-2 sm:px-4 border-b text-left text-lexodus-700 font-medium">"Case Number"</th>
+                                <th class="py-2 px-2 sm:px-4 border-b text-left text-lexodus-700 font-medium">"Title"</th>
+                                <th class="py-2 px-2 sm:px-4 border-b text-left text-lexodus-700 font-medium">"Status"</th>
+                                <th class="hidden sm:table-cell py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Filed Date"</th>
+                                <th class="hidden sm:table-cell py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Court"</th>
+                                <th class="hidden sm:table-cell py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Current Court"</th>
+                                <th class="hidden sm:table-cell py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Judge"</th>
+                                <th class="hidden sm:table-cell py-2 px-4 border-b text-left text-lexodus-700 font-medium">"Actions"</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            <Suspense fallback=move || view! { <tr><td colspan="8" class="text-center py-4">"Loading..."</td></tr> }>
+                                {move || cases.get().map(|result| match result {
+                                    Ok(cases) => cases.into_iter().map(|case| {
+                                        view! {
+                                            <>
+                                                <tr class="hover:bg-lexodus-50">
+                                                    <td class="py-2 pl-4 pr-2 sm:px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.case_number}</td>
+                                                    <td class="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.title}</td>
+                                                    <td class="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.status}</td>
+                                                    <td class="hidden sm:table-cell py-2 px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.filed_date}</td>
+                                                    <td class="hidden sm:table-cell py-2 px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.court_name}</td>
+                                                    <td class="hidden sm:table-cell py-2 px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">{case.current_court_name}</td>
+                                                    <td class="hidden sm:table-cell py-2 px-4 border-b text-left text-xs font-medium text-lexodus-700 uppercase tracking-wider">
+                                                        {case.judge_name.unwrap_or_else(|| "Not assigned".to_string())}
+                                                    </td>
+                                                    <td class="hidden sm:table-cell py-2 px-4 border-b text-sm text-lexodus-800">
+                                                        <button
+                                                            class="bg-lexodus-500 text-white px-3 py-1 rounded hover:bg-lexodus-600"
+                                                            on:click=move |_| {
+                                                                // TODO: Implement view case details
                                                             }
-                                             }).collect_view(),
-                             Err(e) => view! {
-                                   <tr>
-                                         <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
-                                     </tr>
-                               }.into_view(),
-                         })}
-                         </Suspense>
-                     </tbody>
-                 </table>
-                 </div>
-              </section>
-                                    }
+                                                        >
+                                                            "View"
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr class="sm:hidden hover:bg-lexodus-50">
+                                                    <td colspan="3" class="py-2 px-4 border-b text-right">
+                                                        <button
+                                                            class="w-full bg-lexodus-500 text-white px-4 py-2 rounded hover:bg-lexodus-600 text-sm font-medium"
+                                                            on:click=move |_| {
+                                                                // TODO: Implement view case details
+                                                            }
+                                                        >
+                                                            "View Case Details"
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </>
+                                        }
+                                    }).collect_view(),
+                                    Err(e) => view! {
+                                        <tr>
+                                            <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
+                                        </tr>
+                                    }.into_view(),
+                                })}
+                            </Suspense>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
 }
-
-
-
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
     let (show_form, set_show_form) = create_signal(false);
-
     view! {
         <Meta property="og:title" content="Case Management | Lexodus"/>
         <Title text="Case Management | Lexodus"/>
         <Meta name="description" content="Efficient case management interface for Lexodus"/>
         <Meta property="og:description" content="Manage legal cases efficiently in the Lexodus system"/>
         <DefaultLayout>
-            <div class="w-full p-8 bg-lexodus-50">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-semibold text-lexodus-800">"Case Management"</h2>
+            <div class="w-full px-0 sm:p-8 bg-lexodus-50">
+                <div class="flex justify-between items-center mb-8 px-4 sm:px-0">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-lexodus-800">"Case Management"</h2>
                     <button
-                        class="bg-lexodus-600 text-white px-4 py-2 rounded hover:bg-lexodus-700"
+                        class="bg-lexodus-600 text-white text-sm sm:text-base px-2 py-1 sm:px-4 sm:py-2 rounded hover:bg-lexodus-700"
                         on:click=move |_| set_show_form.update(|v| *v = !*v)
-
                     >
                         "Create New Case"
                     </button>
                 </div>
-
-                <div class=move || format!("form-container {}", if show_form.get() { "visible" } else { "" })>
+                <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
                     <CreateCaseForm />
                 </div>
-
                 <CaseList />
             </div>
         </DefaultLayout>
     }
 }
-
 
 #[component]
 fn QuickActions() -> impl IntoView {
