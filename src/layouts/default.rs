@@ -84,8 +84,8 @@ pub fn DefaultLayout(children: Children) -> impl IntoView {
                  // Main Content Wrapper
                  <div class="flex flex-1 flex-col md:ml-16">
                      // Main Content Area
-                     <main id="main-content" class="flex-grow overflow-auto bg-lexodus-100 p-6">
-                         <section class="mb-6 rounded-lg border border-lexodus-200 bg-white p-6 shadow-lg">
+                     <main id="main-content" class="flex-grow overflow-auto bg-lexodus-100 sm:p-4 md:p-6">
+                         <section class="mb-6 rounded-lg border border-lexodus-200 bg-white p-3 sm:p-4 md:p-6 shadow-lg">
                              {children()}
                          </section>
                      </main>
