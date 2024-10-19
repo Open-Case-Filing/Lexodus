@@ -103,6 +103,7 @@ pub fn CreateCaseForm() -> impl IntoView {
 
 
 
+
 #[component]
 pub fn CaseList() -> impl IntoView {
     let cases = create_resource(|| (), |_| get_cases());
