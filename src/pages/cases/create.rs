@@ -3,7 +3,6 @@ use leptos::*;
 use leptos_meta::{Meta, Title};
 use leptos_router::{use_navigate, ActionForm};
 use serde::{Deserialize, Serialize};
-
 use crate::pages::parties::create::PartiesManagement;
 
 use cfg_if::cfg_if;
@@ -13,10 +12,42 @@ cfg_if! {
         use spin_sdk::pg::{Connection, ParameterValue};
         use spin_sdk::{variables};
         use spin_sdk::pg::*;
+        use chrono::Utc;
+        use rand::Rng;
 
+        fn generate_case_number(court_id: i64, judge_name: Option<&str>) -> String {
+            let now = Utc::now();
+            let year = now.format("%y").to_string();
+            let sequence = rand::thread_rng().gen_range(1..=9999);
+            let judge_identifier = match judge_name {
+                Some(name) => generate_judge_initials(name),
+                None => "XX".to_string() // placeholder for unassigned judge
+            };
 
+            format!("{}-{}-{:04}-{}", court_id, year, sequence, judge_identifier)
+        }
+
+        fn generate_judge_initials(name: &str) -> String {
+            let mut initials = name
+                .split_whitespace()
+                .filter_map(|word| word.chars().next())
+                .take(2)
+                .map(|c| c.to_ascii_uppercase())
+                .collect::<String>();
+
+            // If we don't have 2 initials, pad with 'X'
+            while initials.len() < 2 {
+                initials.push('X');
+            }
+
+            initials
+        }
     }
 }
+
+
+
+
 
 #[component]
 pub fn CreateCaseForm() -> impl IntoView {
@@ -31,10 +62,6 @@ pub fn CreateCaseForm() -> impl IntoView {
             <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Create New Case"</h3>
 
             <ActionForm action=create_case>
-                <div class="mb-4">
-                    <label for="case_number" class="block text-lexodus-700 mb-1">"Case Number:"</label>
-                    <input type="text" id="case_number" name="case_number" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
-                </div>
                 <div class="mb-4">
                     <label for="title" class="block text-lexodus-700 mb-1">"Title:"</label>
                     <input type="text" id="title" name="title" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
@@ -291,7 +318,6 @@ pub struct Court {
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
-    case_number: String,
     title: String,
     status: String,
     filed_date: String,
@@ -300,6 +326,25 @@ pub async fn create_case(
 ) -> Result<String, ServerFnError> {
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
+
+    // Fetch judge name if judge_id is provided
+    let judge_name = if let Some(id) = judge_id {
+        let result = conn.query(
+            "SELECT name FROM judges WHERE id = $1",
+            &[ParameterValue::Int64(id)]
+        )?;
+        result.rows.get(0).and_then(|row| {
+            if let DbValue::Str(name) = &row[0] {
+                Some(name.clone())
+            } else {
+                None
+            }
+        })
+    } else {
+        None
+    };
+
+    let case_number = generate_case_number(court_id, judge_name.as_deref());
 
     let sql = if judge_id.is_some() {
         "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id)
@@ -313,7 +358,7 @@ pub async fn create_case(
         conn.execute(
             sql,
             &[
-                ParameterValue::Str(case_number),
+                ParameterValue::Str(case_number.clone()),
                 ParameterValue::Str(title),
                 ParameterValue::Str(status),
                 ParameterValue::Str(filed_date),
@@ -325,7 +370,7 @@ pub async fn create_case(
         conn.execute(
             sql,
             &[
-                ParameterValue::Str(case_number),
+                ParameterValue::Str(case_number.clone()),
                 ParameterValue::Str(title),
                 ParameterValue::Str(status),
                 ParameterValue::Str(filed_date),
@@ -335,14 +380,13 @@ pub async fn create_case(
     };
 
     match execute_result {
-        Ok(rows_affected) => Ok(format!("Case created successfully: {}", rows_affected)),
+        Ok(rows_affected) => Ok(format!("Case created successfully with number {}: {} row(s) affected", case_number, rows_affected)),
         Err(e) => Err(ServerFnError::ServerError(format!(
             "Failed to create case: {}",
             e
         ))),
     }
 }
-
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
     let db_url = variables::get("db_url").unwrap();
