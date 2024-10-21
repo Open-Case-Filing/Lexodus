@@ -778,18 +778,28 @@ CREATE OR REPLACE FUNCTION log_user_activity() RETURNS TRIGGER AS $$
 DECLARE
   action_type text;
   action_details jsonb;
-  current_user_id bigint;
+  current_user_id text;
   current_ip_address inet;
   current_user_agent text;
+  user_id_bigint bigint;
 BEGIN
   -- Determine the action type based on the operation and table
   action_type := TG_OP || '_' || TG_TABLE_NAME;
 
   -- Get the current user context
-  -- These values should be set by the application before performing database operations
-  current_user_id := current_setting('my.application_user_id', true)::bigint;
-  current_ip_address := inet(current_setting('my.application_ip_address', true));
-  current_user_agent := current_setting('my.application_user_agent', true);
+  current_user_id := current_setting('app.current_user_id', true);
+
+  -- Handle the user_id conversion more carefully
+  BEGIN
+    -- First try to convert to bigint
+    user_id_bigint := current_user_id::bigint;
+  EXCEPTION WHEN OTHERS THEN
+    -- If conversion fails, use -1 as default
+    user_id_bigint := -1;
+  END;
+
+  current_ip_address := inet(current_setting('app.current_ip_address', true));
+  current_user_agent := current_setting('app.current_user_agent', true);
 
   -- Create a JSON object with the details of the action
   action_details := jsonb_build_object(
@@ -797,17 +807,14 @@ BEGIN
     'operation', TG_OP,
     'time', now(),
     'new_data', row_to_json(NEW),
-    'old_data', CASE WHEN TG_OP = 'DELETE' THEN row_to_json(OLD) ELSE null END,
-    'current_user_id', current_user_id,
-    'current_ip_address', current_ip_address,
-    'current_user_agent', current_user_agent
+    'old_data', CASE WHEN TG_OP = 'DELETE' THEN row_to_json(OLD) ELSE null END
   );
 
   -- Only log the activity if we have a valid user ID
-  IF current_user_id IS NOT NULL AND EXISTS (SELECT 1 FROM users WHERE id = current_user_id) THEN
+  IF current_user_id IS NOT NULL THEN
     INSERT INTO user_activity_logs (user_id, action_type, action_details, ip_address, user_agent)
     VALUES (
-      current_user_id,
+      user_id_bigint,  -- Now using the safely converted bigint
       action_type,
       action_details,
       current_ip_address,
@@ -818,35 +825,6 @@ BEGIN
     RAISE NOTICE 'Could not log user activity: invalid user_id %', current_user_id;
   END IF;
 
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION set_user_context(p_user_id bigint, p_ip_address inet, p_user_agent text) RETURNS void AS $$
-BEGIN
-  PERFORM set_config('my.application_user_id', p_user_id::text, false);
-  PERFORM set_config('my.application_ip_address', p_ip_address::text, false);
-  PERFORM set_config('my.application_user_agent', p_user_agent, false);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION update_case_status() RETURNS TRIGGER AS $$
-BEGIN
-  IF OLD.status IS DISTINCT FROM NEW.status THEN
-    INSERT INTO case_status_history (case_id, filed_date, status, effective_date, changed_by)
-    VALUES (NEW.id, NEW.filed_date, NEW.status, now(), current_setting('app.current_user_id')::bigint);
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION create_document_version() RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO document_versions (document_id, version_number, file_path, uploaded_by)
-  VALUES (NEW.id,
-          COALESCE((SELECT MAX(version_number) FROM document_versions WHERE document_id = NEW.id), 0) + 1,
-          NEW.file_path,
-          current_setting('app.current_user_id')::bigint);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1037,3 +1015,47 @@ ON CONFLICT (name) DO NOTHING;
 
 
  ALTER TABLE cases ALTER COLUMN judge_id DROP NOT NULL;
+
+
+ ALTER TABLE user_activity_logs
+ ADD COLUMN access_type text,
+ ADD COLUMN data_classification text;
+
+
+
+ ALTER TABLE user_activity_logs
+ ADD COLUMN entity_type text,
+ ADD COLUMN entity_id bigint;
+
+ CREATE TABLE IF NOT EXISTS data_access_policies (
+   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+   role_id bigint REFERENCES roles(id),
+   data_classification text,
+   access_level text
+ );
+
+
+ CREATE TABLE IF NOT EXISTS retention_policies (
+   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+   entity_type text,
+   retention_period interval,
+   disposal_action text
+ );
+
+
+ CREATE TABLE IF NOT EXISTS security_incidents (
+   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+   incident_date timestamp with time zone,
+   incident_type text,
+   description text,
+   resolution text,
+   reported_to_authorities boolean
+ );
+
+
+ ALTER TABLE cases
+ ADD COLUMN user_id text;
+
+ UPDATE cases
+ SET user_id = '2'
+ WHERE user_id IS NULL;

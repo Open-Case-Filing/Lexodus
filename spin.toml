@@ -19,6 +19,7 @@ kv_explorer_password = { default = "ocfs", required = false }
 route = "/..."
 component = "lexodus"
 
+
 [component.lexodus]
 source = "target/wasm32-wasip1/release/lexodus.wasm"
 
@@ -28,6 +29,7 @@ allowed_outbound_hosts = [
 ]
 key_value_stores = ["default"]
 sqlite_databases = ["default"]
+
 
 
 

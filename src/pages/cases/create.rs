@@ -1,19 +1,24 @@
 use crate::layouts::default::*;
 use leptos::*;
 use leptos_meta::{Meta, Title};
-use leptos_router::{use_navigate, ActionForm};
+use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-use crate::pages::parties::create::PartiesManagement;
+use crate::domain::models::user::SafeUser;
+use crate::providers::auth::AuthContext;
 
 use cfg_if::cfg_if;
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
-        use spin_sdk::pg::{Connection, ParameterValue};
+        use spin_sdk::pg::{Connection, ParameterValue, DbValue};
         use spin_sdk::{variables};
-        use spin_sdk::pg::*;
+        use std::collections::HashMap;
+        use std::sync::Arc;
+        use spin_sdk::http::{Request, Headers};
         use chrono::Utc;
         use rand::Rng;
+
+
 
         fn generate_case_number(court_id: i64, judge_name: Option<&str>) -> String {
             let now = Utc::now();
@@ -47,15 +52,41 @@ cfg_if! {
 
 
 
+#[cfg(feature = "ssr")]
+fn get_client_ip(req: &Request) -> String {
+    let forwarded = req.header("x-forwarded-for")
+        .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+        .and_then(|s| s.split(',').next())
+        .map(|s| s.trim())
+        .unwrap_or_else(||
+            req.header("x-real-ip")
+                .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+                .map(|s| s.trim())
+                .unwrap_or("unknown")
+        )
+        .to_string();
+
+    forwarded
+}
+
+#[cfg(feature = "ssr")]
+fn get_user_agent(req: &Request) -> String {
+    req.header("user-agent")
+        .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+        .unwrap_or("unknown")
+        .to_string()
+}
 
 
 #[component]
-pub fn CreateCaseForm() -> impl IntoView {
+pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
     let response = create_case.value();
 
     let judges = create_resource(|| (), |_| get_judges());
     let courts = create_resource(|| (), |_| get_courts());
+
+
 
     view! {
         <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
@@ -109,6 +140,14 @@ pub fn CreateCaseForm() -> impl IntoView {
                         </Suspense>
                     </select>
                 </div>
+                <input
+                  type="hidden"
+                  name="user_id"
+                  value=match user {
+                      Some(u) => u.id,
+                      None => -1,
+                  }
+                />
                 <button type="submit" class="w-full px-4 py-2 bg-lexodus-500 text-white rounded font-semibold hover:bg-lexodus-600 focus:outline-none focus:ring-2 focus:ring-lexodus-500">"Create Case"</button>
             </ActionForm>
 
@@ -212,6 +251,7 @@ pub fn CaseList() -> impl IntoView {
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
+  let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
     let (show_form, set_show_form) = create_signal(false);
     view! {
         <Meta property="og:title" content="Case Management | Lexodus"/>
@@ -230,7 +270,25 @@ pub fn CaseManagement() -> impl IntoView {
                     </button>
                 </div>
                 <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
-                    <CreateCaseForm />
+                <Transition fallback=move || ()>
+                  {move || {
+                      let user = move || {
+                          match auth_context.user.get() {
+                              Some(Ok(Some(user))) => Some(user),
+                              Some(Ok(None)) => None,
+                              Some(Err(_)) => None,
+                              None => None,
+                          }
+                      };
+                      view! {
+                        <Show when=move || user().is_some() fallback=|| ().into_view()>
+                          <CreateCaseForm user=user()/>
+                        </Show>
+                      }
+                  }}
+
+                </Transition>
+
                 </div>
                 <CaseList />
             </div>
@@ -313,6 +371,7 @@ pub struct Case {
     pub current_court_name: String,
     pub judge_id: Option<i64>,
     pub judge_name: Option<String>,
+    pub user_id: String
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -330,6 +389,7 @@ pub struct Court {
     pub circuit: String,
 }
 
+
 #[server(CreateCase, "/api")]
 pub async fn create_case(
     title: String,
@@ -337,23 +397,46 @@ pub async fn create_case(
     filed_date: String,
     court_id: i64,
     judge_id: Option<i64>,
+    user_id: String,
 ) -> Result<String, ServerFnError> {
+    // Ensure user_id is not empty
+    let user_id_clean = if user_id.is_empty() {
+        "-1".to_string()
+    } else {
+        user_id
+    };
+
+    let ip_address = "127.0.0.1".to_string();
+    let user_agent = "unknown".to_string();
+
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
-    // Fetch judge name if judge_id is provided
+    // Set the user context for logging with user_id as string
+    conn.execute(
+        "SELECT set_config('app.current_user_id', $1, true),
+                set_config('app.current_ip_address', $2, true),
+                set_config('app.current_user_agent', $3, true)",
+        &[
+            ParameterValue::Str(user_id_clean.clone()),
+            ParameterValue::Str(ip_address),
+            ParameterValue::Str(user_agent)
+        ]
+    )?;
+
     let judge_name = if let Some(id) = judge_id {
         let result = conn.query(
             "SELECT name FROM judges WHERE id = $1",
             &[ParameterValue::Int64(id)]
         )?;
-        result.rows.get(0).and_then(|row| {
-            if let DbValue::Str(name) = &row[0] {
-                Some(name.clone())
-            } else {
-                None
+        if let Some(row) = result.rows.first() {
+            match &row[0] {
+                DbValue::Str(name) => Some(name.clone()),
+                _ => None
             }
-        })
+        } else {
+            None
+        }
     } else {
         None
     };
@@ -361,45 +444,45 @@ pub async fn create_case(
     let case_number = generate_case_number(court_id, judge_name.as_deref());
 
     let sql = if judge_id.is_some() {
-        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id)
-         VALUES ($1, $2, $3, $4, $5, $5, $6)"
+        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id, user_id)
+         VALUES ($1, $2, $3, $4, $5, $5, $6, $7) RETURNING id"
     } else {
-        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id)
-         VALUES ($1, $2, $3, $4, $5, $5)"
+        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, user_id)
+         VALUES ($1, $2, $3, $4, $5, $5, $6) RETURNING id"
     };
 
-    let execute_result = if let Some(judge) = judge_id {
-        conn.execute(
-            sql,
-            &[
-                ParameterValue::Str(case_number.clone()),
-                ParameterValue::Str(title),
-                ParameterValue::Str(status),
-                ParameterValue::Str(filed_date),
-                ParameterValue::Int64(court_id),
-                ParameterValue::Int64(judge),
-            ],
-        )
+    let params = if let Some(judge) = judge_id {
+        vec![
+            ParameterValue::Str(case_number.clone()),
+            ParameterValue::Str(title),
+            ParameterValue::Str(status),
+            ParameterValue::Str(filed_date),
+            ParameterValue::Int64(court_id),
+            ParameterValue::Int64(judge),
+            ParameterValue::Str(user_id_clean),
+        ]
     } else {
-        conn.execute(
-            sql,
-            &[
-                ParameterValue::Str(case_number.clone()),
-                ParameterValue::Str(title),
-                ParameterValue::Str(status),
-                ParameterValue::Str(filed_date),
-                ParameterValue::Int64(court_id),
-            ],
-        )
+        vec![
+            ParameterValue::Str(case_number.clone()),
+            ParameterValue::Str(title),
+            ParameterValue::Str(status),
+            ParameterValue::Str(filed_date),
+            ParameterValue::Int64(court_id),
+            ParameterValue::Str(user_id_clean),
+        ]
     };
 
-    match execute_result {
-        Ok(rows_affected) => Ok(format!("Case created successfully with number {}: {} row(s) affected", case_number, rows_affected)),
-        Err(e) => Err(ServerFnError::ServerError(format!(
-            "Failed to create case: {}",
-            e
-        ))),
-    }
+    let result = conn.query(sql, &params)?;
+    let case_id = if let Some(row) = result.rows.first() {
+        match row[0] {
+            DbValue::Int64(id) => id,
+            _ => return Err(ServerFnError::ServerError("Failed to get case ID".into())),
+        }
+    } else {
+        return Err(ServerFnError::ServerError("No case ID returned".into()));
+    };
+
+    Ok(format!("Case created successfully with number {} and ID {}", case_number, case_id))
 }
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
@@ -409,7 +492,8 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
     let sql = "SELECT c.id, c.case_number, c.title, c.status, c.filed_date,
                c.court_id, co.name as court_name,
                c.current_court_id, cco.name as current_court_name,
-               c.judge_id, j.name as judge_name
+               c.judge_id, j.name as judge_name,
+               COALESCE(c.user_id, '-1') as user_id
                FROM cases c
                LEFT JOIN courts co ON c.court_id = co.id
                LEFT JOIN courts cco ON c.current_court_id = cco.id
@@ -463,6 +547,10 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
             judge_name: match &row[10] {
                 DbValue::Str(judge_name) => Some(judge_name.clone()),
                 _ => None,
+            },
+            user_id: match &row[11] {
+                DbValue::Str(user_id) => user_id.clone(),
+                _ => "-1".to_string(),  // Default value if user_id is not found
             },
         })
         .collect();

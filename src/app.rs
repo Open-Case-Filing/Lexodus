@@ -6,8 +6,10 @@ use crate::pages::cases::*;
 use crate::pages::user_management::*;
 
 use crate::pages::cases::{
-    create::CaseManagement, create::CreateCaseForm, edit_case::EditCase, list_case::ListCases,
-    search_case::SearchCases, view_case::ViewCase,
+    create::CaseManagement, create::CreateCaseForm, edit_case::EditCase,
+    list_case::ListCases,
+    // search_case::SearchCases,
+    view_case::ViewCase,
 };
 
 // auth
@@ -44,10 +46,10 @@ pub fn App() -> impl IntoView {
           />
           <Route path="cases" view=CaseManagement>
               <Route path="" view=ListCases/>
-              <Route path="new" view=CreateCaseForm/>
+              // <Route path="new" view=CreateCaseForm user=user/>
               <Route path=":id" view=ViewCase/>
               <Route path=":id/edit" view=EditCase/>
-              <Route path="search" view=SearchCases/>
+              // <Route path="search" view=SearchCases/>
           </Route>
             // <Route path="/case-management/activity" view=Activity/>
             <Route path="/users" view=UserManagement/>
