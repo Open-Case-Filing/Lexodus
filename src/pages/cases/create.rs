@@ -236,6 +236,9 @@ pub fn CaseList() -> impl IntoView {
                                     }).collect_view(),
                                     Err(e) => view! {
                                         <tr>
+                                            <td colspan="8" class="text-center text-red-500 border-b py-4">"No existing cases found."</td>
+                                        </tr>
+                                        <tr>
                                             <td colspan="8" class="text-center text-red-500 border-b py-4">{e.to_string()}</td>
                                         </tr>
                                     }.into_view(),
