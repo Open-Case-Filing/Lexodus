@@ -20,17 +20,42 @@ cfg_if! {
 
 
 
-        fn generate_case_number(court_id: i64, judge_name: Option<&str>) -> String {
+        fn generate_case_number(conn: &Connection, court_id: i64, judge_name: Option<&str>) -> Result<String, ServerFnError> {
             let now = Utc::now();
             let year = now.format("%y").to_string();
-            let sequence = rand::thread_rng().gen_range(1..=9999);
-            let judge_identifier = match judge_name {
-                Some(name) => generate_judge_initials(name),
-                None => "XX".to_string() // placeholder for unassigned judge
+
+            // Get the highest sequence number for this court and year
+            let result = conn.query(
+                "SELECT COALESCE(
+                    MAX(REGEXP_REPLACE(case_number, '^(\\d+)-(\\d+)-(\\d+)-.*$', '\\3')::integer
+                ), 0)
+                FROM cases
+                WHERE case_number LIKE $1 || '-' || $2 || '-%'",
+                &[
+                    &ParameterValue::Int64(court_id),
+                    &ParameterValue::Str(year.clone())  // Clone here
+                ]
+            )?;
+
+            let max_sequence = if let Some(row) = result.rows.first() {
+                match &row[0] {
+                    DbValue::Int64(seq) => *seq,
+                    _ => 0,
+                }
+            } else {
+                0
             };
 
-            format!("{}-{}-{:04}-{}", court_id, year, sequence, judge_identifier)
+            let new_sequence = max_sequence + 1;
+
+            let judge_identifier = match judge_name {
+                Some(name) => generate_judge_initials(name),
+                None => "XX".to_string()
+            };
+
+            Ok(format!("{}-{}-{:04}-{}", court_id, year, new_sequence, judge_identifier))
         }
+
 
         fn generate_judge_initials(name: &str) -> String {
             let mut initials = name
@@ -388,12 +413,6 @@ pub struct Court {
     pub district: String,
     pub circuit: String,
 }
-#[derive(Debug, Clone)]
-pub struct UserAuth {
-    pub user_id: String,
-    pub roles: Vec<String>,
-    pub permissions: Vec<String>,
-}
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
@@ -412,6 +431,31 @@ pub async fn create_case(
 
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
+
+    // Set the context BEFORE doing any operations
+    conn.execute(
+        "SELECT
+            set_config('app.current_user_id', $1, true),
+            set_config('app.current_ip_address', $2, true),
+            set_config('app.current_user_agent', $3, true)",
+        &[
+            ParameterValue::Str(user_id.clone()),
+            ParameterValue::Str("0.0.0.0".to_string()),  // or get real IP if available
+            ParameterValue::Str("Lexodus Web Client".to_string()),  // or get real user agent
+        ]
+    )?;
+
+    // Verify the context was set
+    conn.execute(
+        "DO $$
+        BEGIN
+            RAISE NOTICE 'Context set: user_id=%, ip=%, agent=%',
+                current_setting('app.current_user_id', true),
+                current_setting('app.current_ip_address', true),
+                current_setting('app.current_user_agent', true);
+        END $$;",
+        &[]
+    )?;
 
     // First fetch user's role and permissions
     let user_info = conn.query(
@@ -454,8 +498,8 @@ pub async fn create_case(
         return Err(ServerFnError::ServerError("Invalid input: Required fields missing".to_string()));
     }
 
-    // Generate case number
-    let case_number = generate_case_number(court_id, None);
+    // Generate unique case number within transaction
+    let case_number = generate_case_number(&conn, court_id, None)?;
 
     let sql = if judge_id.is_some() {
         "INSERT INTO cases (
@@ -516,6 +560,18 @@ pub async fn create_case(
     };
 
     let result = conn.query(sql, &params)?;
+
+    let result = conn.query(sql, &params)?;
+
+    // Final verify of context after insert
+    let final_check = conn.query(
+        "SELECT
+            current_setting('app.current_user_id', true) as user_id,
+            current_setting('app.current_ip_address', true) as ip,
+            current_setting('app.current_user_agent', true) as agent",
+        &[]
+    )?;
+
     let case_id = if let Some(row) = result.rows.first() {
         match row[0] {
             DbValue::Int64(id) => id,

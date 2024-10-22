@@ -774,6 +774,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Update just the function
 CREATE OR REPLACE FUNCTION log_user_activity() RETURNS TRIGGER AS $$
 DECLARE
   action_type text;
@@ -781,53 +782,48 @@ DECLARE
   current_user_id text;
   current_ip_address text;
   current_user_agent text;
-  valid_ip_address inet;
 BEGIN
-  -- Determine the action type based on the operation and table
+  -- Determine the action type
   action_type := TG_OP || '_' || TG_TABLE_NAME;
 
-  -- Get the current user context with safe defaults
-  current_user_id := COALESCE(NULLIF(current_setting('app.current_user_id', true), ''), NULL);
+  -- Get the current user context
+  current_user_id := COALESCE(current_setting('app.current_user_id', true), NEW.created_by::text);
   current_ip_address := COALESCE(current_setting('app.current_ip_address', true), '0.0.0.0');
   current_user_agent := COALESCE(current_setting('app.current_user_agent', true), 'unknown');
 
-  -- Handle the IP address conversion safely
-  BEGIN
-    valid_ip_address := current_ip_address::inet;
-  EXCEPTION WHEN OTHERS THEN
-    valid_ip_address := '0.0.0.0'::inet;
-  END;
+  RAISE NOTICE 'Logging activity: user_id=%, ip=%, agent=%', current_user_id, current_ip_address, current_user_agent;
 
-  -- Create a JSON object with the details of the action
+  -- Create the action details
   action_details := jsonb_build_object(
     'table', TG_TABLE_NAME,
     'operation', TG_OP,
     'time', now(),
-    'new_data', row_to_json(NEW),
-    'old_data', CASE WHEN TG_OP = 'DELETE' THEN row_to_json(OLD) ELSE null END
+    'new_data', CASE WHEN TG_OP != 'DELETE' THEN row_to_json(NEW) ELSE null END,
+    'old_data', CASE WHEN TG_OP != 'INSERT' THEN row_to_json(OLD) ELSE null END
   );
 
-  -- Only log if we have a valid user_id that exists in the users table
-  IF current_user_id IS NOT NULL
-     AND EXISTS (SELECT 1 FROM users WHERE id = current_user_id::bigint) THEN
+  -- Insert the log entry
+  INSERT INTO user_activity_logs (
+    user_id,
+    action_type,
+    action_details,
+    ip_address,
+    user_agent,
+    created_at
+  ) VALUES (
+    current_user_id::bigint,
+    action_type,
+    action_details,
+    current_ip_address,
+    current_user_agent,
+    now()
+  );
 
-    INSERT INTO user_activity_logs (
-      user_id,
-      action_type,
-      action_details,
-      ip_address,
-      user_agent
-    )
-    VALUES (
-      current_user_id::bigint,
-      action_type,
-      action_details,
-      valid_ip_address,
-      current_user_agent
-    );
-  END IF;
-
-  RETURN NEW;
+  -- Return NEW for INSERT/UPDATE, OLD for DELETE
+  RETURN COALESCE(NEW, OLD);
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Error in log_user_activity: %', SQLERRM;
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
