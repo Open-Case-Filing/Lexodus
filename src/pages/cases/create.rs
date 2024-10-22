@@ -388,7 +388,12 @@ pub struct Court {
     pub district: String,
     pub circuit: String,
 }
-
+#[derive(Debug, Clone)]
+pub struct UserAuth {
+    pub user_id: String,
+    pub roles: Vec<String>,
+    pub permissions: Vec<String>,
+}
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
@@ -399,56 +404,92 @@ pub async fn create_case(
     judge_id: Option<i64>,
     user_id: String,
 ) -> Result<String, ServerFnError> {
-    // Ensure user_id is not empty
-    let user_id_clean = if user_id.is_empty() {
-        "-1".to_string()
-    } else {
-        user_id
+    // Convert user_id to i64
+    let user_id_i64 = match user_id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => return Err(ServerFnError::ServerError("Invalid user ID format".to_string()))
     };
-
-    let ip_address = "127.0.0.1".to_string();
-    let user_agent = "unknown".to_string();
 
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
-    // Set the user context for logging with user_id as string
-    conn.execute(
-        "SELECT set_config('app.current_user_id', $1, true),
-                set_config('app.current_ip_address', $2, true),
-                set_config('app.current_user_agent', $3, true)",
-        &[
-            ParameterValue::Str(user_id_clean.clone()),
-            ParameterValue::Str(ip_address),
-            ParameterValue::Str(user_agent)
-        ]
+    // First fetch user's role and permissions
+    let user_info = conn.query(
+        "SELECT r.name as role_name
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         WHERE u.id = $1",
+        &[ParameterValue::Int64(user_id_i64)]
     )?;
 
-    let judge_name = if let Some(id) = judge_id {
-        let result = conn.query(
-            "SELECT name FROM judges WHERE id = $1",
-            &[ParameterValue::Int64(id)]
-        )?;
-        if let Some(row) = result.rows.first() {
-            match &row[0] {
-                DbValue::Str(name) => Some(name.clone()),
-                _ => None
-            }
-        } else {
-            None
+    // Check if user exists and get their role
+    let role = if let Some(row) = user_info.rows.first() {
+        match &row[0] {
+            DbValue::Str(role) => role.clone(),
+            _ => return Err(ServerFnError::ServerError("Invalid role data".to_string()))
         }
     } else {
-        None
+        return Err(ServerFnError::ServerError("User not found".to_string()));
     };
 
-    let case_number = generate_case_number(court_id, judge_name.as_deref());
+    // Check create_case permission
+    let has_permission = conn.query(
+        "SELECT 1
+         FROM users u
+         JOIN role_permissions rp ON rp.role_id = u.role_id
+         JOIN permissions p ON p.id = rp.permission_id
+         WHERE u.id = $1
+         AND p.name = 'create_case'",
+        &[ParameterValue::Int64(user_id_i64)]
+    )?;
+
+    if has_permission.rows.is_empty() {
+        return Err(ServerFnError::ServerError(
+            "Unauthorized: Insufficient permissions to create case".to_string()
+        ));
+    }
+
+    // Input validation
+    if title.is_empty() || status.is_empty() || filed_date.is_empty() {
+        return Err(ServerFnError::ServerError("Invalid input: Required fields missing".to_string()));
+    }
+
+    // Generate case number
+    let case_number = generate_case_number(court_id, None);
 
     let sql = if judge_id.is_some() {
-        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, judge_id, user_id)
-         VALUES ($1, $2, $3, $4, $5, $5, $6, $7) RETURNING id"
+        "INSERT INTO cases (
+            case_number, title, status, filed_date,
+            court_id, current_court_id, judge_id,
+            created_by, created_by_role
+         )
+         VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8)
+         RETURNING id"
     } else {
-        "INSERT INTO cases (case_number, title, status, filed_date, court_id, current_court_id, user_id)
-         VALUES ($1, $2, $3, $4, $5, $5, $6) RETURNING id"
+        "INSERT INTO cases (
+            case_number, title, status, filed_date,
+            court_id, current_court_id,
+            created_by, created_by_role
+         )
+         VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
+         RETURNING id"
+    };// Inside create_case function:
+    let sql = if judge_id.is_some() {
+        "INSERT INTO cases (
+            case_number, title, status, filed_date,
+            court_id, current_court_id, judge_id,
+            created_by, created_by_role
+         )
+         VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8)
+         RETURNING id"
+    } else {
+        "INSERT INTO cases (
+            case_number, title, status, filed_date,
+            court_id, current_court_id,
+            created_by, created_by_role
+         )
+         VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
+         RETURNING id"
     };
 
     let params = if let Some(judge) = judge_id {
@@ -459,7 +500,8 @@ pub async fn create_case(
             ParameterValue::Str(filed_date),
             ParameterValue::Int64(court_id),
             ParameterValue::Int64(judge),
-            ParameterValue::Str(user_id_clean),
+            ParameterValue::Int64(user_id_i64),
+            ParameterValue::Str(role),
         ]
     } else {
         vec![
@@ -468,7 +510,8 @@ pub async fn create_case(
             ParameterValue::Str(status),
             ParameterValue::Str(filed_date),
             ParameterValue::Int64(court_id),
-            ParameterValue::Str(user_id_clean),
+            ParameterValue::Int64(user_id_i64),
+            ParameterValue::Str(role),
         ]
     };
 
@@ -476,13 +519,39 @@ pub async fn create_case(
     let case_id = if let Some(row) = result.rows.first() {
         match row[0] {
             DbValue::Int64(id) => id,
-            _ => return Err(ServerFnError::ServerError("Failed to get case ID".into())),
+            _ => return Err(ServerFnError::ServerError("Failed to get case ID".to_string())),
         }
     } else {
-        return Err(ServerFnError::ServerError("No case ID returned".into()));
+        return Err(ServerFnError::ServerError("No case ID returned".to_string()));
     };
 
-    Ok(format!("Case created successfully with number {} and ID {}", case_number, case_id))
+    Ok(format!("Case created successfully with number {}", case_number))
+}
+
+#[server(LogFailedCaseCreation, "/api")]
+pub async fn log_failed_case_creation(
+    reason: String,
+    user_id: String,
+) -> Result<(), ServerFnError> {
+    let user_id_i64 = match user_id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => return Err(ServerFnError::ServerError("Invalid user ID format".to_string()))
+    };
+
+    let db_url = variables::get("db_url").unwrap();
+    let conn = Connection::open(&db_url)?;
+
+    conn.execute(
+        "INSERT INTO failed_operations (user_id, operation, reason, timestamp)
+         VALUES ($1, $2, $3, NOW())",
+        &[
+            ParameterValue::Int64(user_id_i64),
+            ParameterValue::Str("create_case".to_string()),
+            ParameterValue::Str(reason),
+        ]
+    )?;
+
+    Ok(())
 }
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {

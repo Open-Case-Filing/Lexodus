@@ -779,27 +779,24 @@ DECLARE
   action_type text;
   action_details jsonb;
   current_user_id text;
-  current_ip_address inet;
+  current_ip_address text;
   current_user_agent text;
-  user_id_bigint bigint;
+  valid_ip_address inet;
 BEGIN
   -- Determine the action type based on the operation and table
   action_type := TG_OP || '_' || TG_TABLE_NAME;
 
-  -- Get the current user context
-  current_user_id := current_setting('app.current_user_id', true);
+  -- Get the current user context with safe defaults
+  current_user_id := COALESCE(NULLIF(current_setting('app.current_user_id', true), ''), NULL);
+  current_ip_address := COALESCE(current_setting('app.current_ip_address', true), '0.0.0.0');
+  current_user_agent := COALESCE(current_setting('app.current_user_agent', true), 'unknown');
 
-  -- Handle the user_id conversion more carefully
+  -- Handle the IP address conversion safely
   BEGIN
-    -- First try to convert to bigint
-    user_id_bigint := current_user_id::bigint;
+    valid_ip_address := current_ip_address::inet;
   EXCEPTION WHEN OTHERS THEN
-    -- If conversion fails, use -1 as default
-    user_id_bigint := -1;
+    valid_ip_address := '0.0.0.0'::inet;
   END;
-
-  current_ip_address := inet(current_setting('app.current_ip_address', true));
-  current_user_agent := current_setting('app.current_user_agent', true);
 
   -- Create a JSON object with the details of the action
   action_details := jsonb_build_object(
@@ -810,19 +807,24 @@ BEGIN
     'old_data', CASE WHEN TG_OP = 'DELETE' THEN row_to_json(OLD) ELSE null END
   );
 
-  -- Only log the activity if we have a valid user ID
-  IF current_user_id IS NOT NULL THEN
-    INSERT INTO user_activity_logs (user_id, action_type, action_details, ip_address, user_agent)
-    VALUES (
-      user_id_bigint,  -- Now using the safely converted bigint
+  -- Only log if we have a valid user_id that exists in the users table
+  IF current_user_id IS NOT NULL
+     AND EXISTS (SELECT 1 FROM users WHERE id = current_user_id::bigint) THEN
+
+    INSERT INTO user_activity_logs (
+      user_id,
       action_type,
       action_details,
-      current_ip_address,
+      ip_address,
+      user_agent
+    )
+    VALUES (
+      current_user_id::bigint,
+      action_type,
+      action_details,
+      valid_ip_address,
       current_user_agent
     );
-  ELSE
-    -- Log to PostgreSQL's log that we couldn't record this activity
-    RAISE NOTICE 'Could not log user activity: invalid user_id %', current_user_id;
   END IF;
 
   RETURN NEW;
@@ -983,6 +985,7 @@ ON CONFLICT (name) DO NOTHING;
 
  -- Add permissions
  INSERT INTO permissions (name, description) VALUES
+  ('create_case', 'Can create case'),
  ('view_case', 'Can view case details'),
  ('edit_case', 'Can edit case details'),
  ('file_document', 'Can file documents'),
@@ -1000,18 +1003,185 @@ ON CONFLICT (name) DO NOTHING;
  ('manage_evidence', 'Can manage case evidence')
 ON CONFLICT (name) DO NOTHING;
 
- -- Assign permissions to roles (example assignments)
- INSERT INTO role_permissions (role_id, permission_id) VALUES
- ((SELECT id FROM roles WHERE name = 'judge'), (SELECT id FROM permissions WHERE name = 'view_case')),
- ((SELECT id FROM roles WHERE name = 'judge'), (SELECT id FROM permissions WHERE name = 'edit_case')),
- ((SELECT id FROM roles WHERE name = 'judge'), (SELECT id FROM permissions WHERE name = 'view_sealed_documents')),
- ((SELECT id FROM roles WHERE name = 'attorney'), (SELECT id FROM permissions WHERE name = 'view_case')),
- ((SELECT id FROM roles WHERE name = 'attorney'), (SELECT id FROM permissions WHERE name = 'file_document')),
- ((SELECT id FROM roles WHERE name = 'clerk'), (SELECT id FROM permissions WHERE name = 'edit_docket')),
- ((SELECT id FROM roles WHERE name = 'clerk'), (SELECT id FROM permissions WHERE name = 'schedule_hearing')),
- ((SELECT id FROM roles WHERE name = 'admin'), (SELECT id FROM permissions WHERE name = 'manage_users')),
- ((SELECT id FROM roles WHERE name = 'admin'), (SELECT id FROM permissions WHERE name = 'generate_reports'))
- ON CONFLICT DO NOTHING;
+-- Add permissions to Judges
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'judge'
+AND p.name IN (
+    'create_case',
+    'view_case',
+    'edit_case',
+    'view_sealed_documents',
+    'schedule_hearing',
+    'manage_court_calendar',
+    'manage_jury',
+    'edit_docket',
+    'access_financial_records',
+    'manage_evidence',
+    'edit_transcripts'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Attorneys
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'attorney'
+AND p.name IN (
+    'view_case',
+    'create_case',
+    'file_document',
+    'schedule_hearing',
+    'view_sealed_documents',
+    'access_financial_records'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Public Defenders
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'public_defender'
+AND p.name IN (
+    'view_case',
+    'create_case',
+    'file_document',
+    'schedule_hearing',
+    'view_sealed_documents',
+    'access_financial_records'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Prosecutors
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'prosecutor'
+AND p.name IN (
+    'view_case',
+    'create_case',
+    'file_document',
+    'schedule_hearing',
+    'view_sealed_documents',
+    'access_financial_records',
+    'manage_evidence'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Clerks
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'clerk'
+AND p.name IN (
+    'view_case',
+    'edit_docket',
+    'schedule_hearing',
+    'manage_court_calendar',
+    'file_document',
+    'access_financial_records',
+    'edit_transcripts'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Paralegals
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'paralegal'
+AND p.name IN (
+    'view_case',
+    'file_document',
+    'access_financial_records'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Court Reporters
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'court_reporter'
+AND p.name IN (
+    'view_case',
+    'edit_transcripts'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Probation Officers
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'probation_officer'
+AND p.name IN (
+    'view_case',
+    'access_probation_records',
+    'file_document'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Law Enforcement
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'law_enforcement'
+AND p.name IN (
+    'view_case',
+    'file_document',
+    'manage_evidence'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Expert Witnesses
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'expert_witness'
+AND p.name IN (
+    'view_case',
+    'file_document'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Mediators
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'mediator'
+AND p.name IN (
+    'view_case',
+    'schedule_hearing',
+    'file_document'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add permissions to Interpreters
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'interpreter'
+AND p.name IN (
+    'view_case'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add all permissions to Admin role
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'admin'
+ON CONFLICT DO NOTHING;
+
+-- Add limited permissions to Party role
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'party'
+AND p.name IN (
+    'view_case',
+    'file_document'
+)
+ON CONFLICT DO NOTHING;
 
 
  ALTER TABLE cases ALTER COLUMN judge_id DROP NOT NULL;
@@ -1059,3 +1229,44 @@ ON CONFLICT (name) DO NOTHING;
  UPDATE cases
  SET user_id = '2'
  WHERE user_id IS NULL;
+
+
+ -- Table for tracking user court access
+ CREATE TABLE IF NOT EXISTS user_court_access (
+     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+     user_id bigint REFERENCES users(id),
+     court_id bigint REFERENCES courts(id),
+     granted_by bigint REFERENCES users(id),
+     granted_at timestamp with time zone DEFAULT now(),
+     UNIQUE(user_id, court_id)
+ );
+
+ -- Add created_by_role to cases
+ ALTER TABLE cases
+ ADD COLUMN IF NOT EXISTS created_by_role text;
+
+ -- Table for tracking failed operations with more detail
+ CREATE TABLE IF NOT EXISTS failed_operations (
+     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+     user_id bigint REFERENCES users(id),
+     operation text NOT NULL,
+     reason text NOT NULL,
+     timestamp timestamp with time zone DEFAULT now(),
+     ip_address inet,
+     user_agent text,
+     role_at_time text
+ );
+
+ -- Index for performance
+ CREATE INDEX IF NOT EXISTS idx_user_court_access_user_id ON user_court_access(user_id);
+ CREATE INDEX IF NOT EXISTS idx_user_court_access_court_id ON user_court_access(court_id);
+ CREATE INDEX IF NOT EXISTS idx_failed_operations_user_id ON failed_operations(user_id);
+ CREATE INDEX IF NOT EXISTS idx_failed_operations_timestamp ON failed_operations(timestamp);
+
+
+ -- Add only created_by column
+ ALTER TABLE cases
+ ADD COLUMN created_by bigint REFERENCES users(id);
+
+ -- Add index for better query performance
+ CREATE INDEX IF NOT EXISTS idx_cases_created_by ON cases(created_by);
