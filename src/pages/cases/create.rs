@@ -18,44 +18,75 @@ cfg_if! {
         use chrono::Utc;
         use rand::Rng;
 
-
-
-        fn generate_case_number(conn: &Connection, court_id: i64, judge_name: Option<&str>) -> Result<String, ServerFnError> {
-            let now = Utc::now();
-            let year = now.format("%y").to_string();
-
-            // Get the highest sequence number for this court and year
+        fn case_number_exists(conn: &Connection, case_number: &str, filed_date: &str) -> Result<bool, ServerFnError> {
             let result = conn.query(
-                "SELECT COALESCE(
-                    MAX(REGEXP_REPLACE(case_number, '^(\\d+)-(\\d+)-(\\d+)-.*$', '\\3')::integer
-                ), 0)
-                FROM cases
-                WHERE case_number LIKE $1 || '-' || $2 || '-%'",
+                "SELECT 1 FROM cases WHERE case_number = $1 AND filed_date = $2",
                 &[
-                    &ParameterValue::Int64(court_id),
-                    &ParameterValue::Str(year.clone())  // Clone here
+                    ParameterValue::Str(case_number.to_string()),
+                    ParameterValue::Str(filed_date.to_string()),
                 ]
             )?;
 
-            let max_sequence = if let Some(row) = result.rows.first() {
-                match &row[0] {
-                    DbValue::Int64(seq) => *seq,
-                    _ => 0,
-                }
-            } else {
-                0
-            };
-
-            let new_sequence = max_sequence + 1;
-
-            let judge_identifier = match judge_name {
-                Some(name) => generate_judge_initials(name),
-                None => "XX".to_string()
-            };
-
-            Ok(format!("{}-{}-{:04}-{}", court_id, year, new_sequence, judge_identifier))
+            Ok(!result.rows.is_empty())
         }
 
+        fn generate_case_number(conn: &Connection, court_id: i64, filed_date: &str, judge_name: Option<&str>) -> Result<String, ServerFnError> {
+            let year = filed_date[2..4].to_string(); // Extract year from filed_date (assuming format is YYYY-MM-DD)
+
+            for attempt in 1..=100 {  // Increase max attempts
+                // Get the latest case number for this court and year
+                let result = conn.query(
+                    "SELECT case_number
+                     FROM cases
+                     WHERE court_id = $1 AND case_number LIKE $2 || '%' AND filed_date = $3
+                     ORDER BY REGEXP_REPLACE(case_number, '^(\\d+)-(\\d+)-(\\d+)-.*$', '\\3')::integer DESC
+                     LIMIT 1",
+                    &[
+                        ParameterValue::Int64(court_id),
+                        ParameterValue::Str(format!("{}-{}-", court_id, year)),
+                        ParameterValue::Str(filed_date.to_string()),
+                    ]
+                )?;
+
+                let new_sequence = if let Some(row) = result.rows.first() {
+                    if let DbValue::Str(last_case_number) = &row[0] {
+                        // Extract the sequence number and increment it
+                        let parts: Vec<&str> = last_case_number.split('-').collect();
+                        if parts.len() >= 3 {
+                            if let Ok(seq) = parts[2].parse::<i64>() {
+                                seq + 1
+                            } else {
+                                1
+                            }
+                        } else {
+                            1
+                        }
+                    } else {
+                        1
+                    }
+                } else {
+                    1  // No existing cases for this court, year, and filed_date
+                };
+
+                let judge_identifier = match judge_name {
+                    Some(name) => generate_judge_initials(name),
+                    None => "XX".to_string()
+                };
+
+                let case_number = format!("{}-{}-{:04}-{}", court_id, year, new_sequence, judge_identifier);
+
+                println!("Attempt {}: Trying to generate case number: {} for date: {}", attempt, case_number, filed_date);
+
+                // Check if the generated case number already exists for this filed_date
+                if !case_number_exists(conn, &case_number, filed_date)? {
+                    return Ok(case_number);
+                }
+
+                println!("Case number {} already exists for date {}. Retrying...", case_number, filed_date);
+            }
+
+            Err(ServerFnError::ServerError(format!("Failed to generate unique case number after 100 attempts for court_id: {}, year: {}, filed_date: {}", court_id, year, filed_date)))
+        }
 
         fn generate_judge_initials(name: &str) -> String {
             let mut initials = name
@@ -423,7 +454,6 @@ pub async fn create_case(
     judge_id: Option<i64>,
     user_id: String,
 ) -> Result<String, ServerFnError> {
-    // Convert user_id to i64
     let user_id_i64 = match user_id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => return Err(ServerFnError::ServerError("Invalid user ID format".to_string()))
@@ -432,156 +462,103 @@ pub async fn create_case(
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
-    // Set the context BEFORE doing any operations
-    conn.execute(
-        "SELECT
-            set_config('app.current_user_id', $1, true),
-            set_config('app.current_ip_address', $2, true),
-            set_config('app.current_user_agent', $3, true)",
-        &[
-            ParameterValue::Str(user_id.clone()),
-            ParameterValue::Str("0.0.0.0".to_string()),  // or get real IP if available
-            ParameterValue::Str("Lexodus Web Client".to_string()),  // or get real user agent
-        ]
-    )?;
+    for attempt in 1..=10 {  // Try up to 10 times
+        // Start transaction
+        conn.execute("BEGIN", &[])?;
 
-    // Verify the context was set
-    conn.execute(
-        "DO $$
-        BEGIN
-            RAISE NOTICE 'Context set: user_id=%, ip=%, agent=%',
-                current_setting('app.current_user_id', true),
-                current_setting('app.current_ip_address', true),
-                current_setting('app.current_user_agent', true);
-        END $$;",
-        &[]
-    )?;
+        // Set the context within transaction
+        conn.execute(
+            "SELECT
+                set_config('app.current_user_id', $1, true),
+                set_config('app.current_ip_address', $2, true),
+                set_config('app.current_user_agent', $3, true)",
+            &[
+                ParameterValue::Str(user_id.clone()),
+                ParameterValue::Str("0.0.0.0".to_string()),
+                ParameterValue::Str("Lexodus Web Client".to_string()),
+            ]
+        )?;
 
-    // First fetch user's role and permissions
-    let user_info = conn.query(
-        "SELECT r.name as role_name
-         FROM users u
-         JOIN roles r ON r.id = u.role_id
-         WHERE u.id = $1",
-        &[ParameterValue::Int64(user_id_i64)]
-    )?;
+        // First fetch user's role
+        let user_info = conn.query(
+            "SELECT r.name as role_name
+             FROM users u
+             JOIN roles r ON r.id = u.role_id
+             WHERE u.id = $1",
+            &[ParameterValue::Int64(user_id_i64)]
+        )?;
 
-    // Check if user exists and get their role
-    let role = if let Some(row) = user_info.rows.first() {
-        match &row[0] {
-            DbValue::Str(role) => role.clone(),
-            _ => return Err(ServerFnError::ServerError("Invalid role data".to_string()))
+        let role = if let Some(row) = user_info.rows.first() {
+            match &row[0] {
+                DbValue::Str(role) => role.clone(),
+                _ => {
+                    conn.execute("ROLLBACK", &[])?;
+                    return Err(ServerFnError::ServerError("Invalid role data".to_string()));
+                }
+            }
+        } else {
+            conn.execute("ROLLBACK", &[])?;
+            return Err(ServerFnError::ServerError("User not found".to_string()));
+        };
+
+        // Generate unique case number
+        let case_number = generate_case_number(&conn, court_id, &filed_date, None)?;
+
+        let sql = if judge_id.is_some() {
+            "INSERT INTO cases (
+                case_number, title, status, filed_date,
+                court_id, current_court_id, judge_id,
+                created_by, created_by_role
+            ) VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8)
+            ON CONFLICT (case_number, filed_date) DO NOTHING
+            RETURNING id"
+        } else {
+            "INSERT INTO cases (
+                case_number, title, status, filed_date,
+                court_id, current_court_id,
+                created_by, created_by_role
+            ) VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
+            ON CONFLICT (case_number, filed_date) DO NOTHING
+            RETURNING id"
+        };
+
+        let params = if let Some(judge) = judge_id {
+            vec![
+                ParameterValue::Str(case_number.clone()),
+                ParameterValue::Str(title.clone()),
+                ParameterValue::Str(status.clone()),
+                ParameterValue::Str(filed_date.clone()),
+                ParameterValue::Int64(court_id),
+                ParameterValue::Int64(judge),
+                ParameterValue::Int64(user_id_i64),
+                ParameterValue::Str(role.clone()),
+            ]
+        } else {
+            vec![
+                ParameterValue::Str(case_number.clone()),
+                ParameterValue::Str(title.clone()),
+                ParameterValue::Str(status.clone()),
+                ParameterValue::Str(filed_date.clone()),
+                ParameterValue::Int64(court_id),
+                ParameterValue::Int64(user_id_i64),
+                ParameterValue::Str(role.clone()),
+            ]
+        };
+
+        let result = conn.query(sql, &params)?;
+
+        if !result.rows.is_empty() {
+            // Case was successfully inserted
+            conn.execute("COMMIT", &[])?;
+            return Ok(format!("Case created successfully with number {}", case_number));
+        } else {
+            // Conflict occurred, rollback and try again
+            conn.execute("ROLLBACK", &[])?;
+            println!("Attempt {} failed due to conflict. Retrying...", attempt);
         }
-    } else {
-        return Err(ServerFnError::ServerError("User not found".to_string()));
-    };
-
-    // Check create_case permission
-    let has_permission = conn.query(
-        "SELECT 1
-         FROM users u
-         JOIN role_permissions rp ON rp.role_id = u.role_id
-         JOIN permissions p ON p.id = rp.permission_id
-         WHERE u.id = $1
-         AND p.name = 'create_case'",
-        &[ParameterValue::Int64(user_id_i64)]
-    )?;
-
-    if has_permission.rows.is_empty() {
-        return Err(ServerFnError::ServerError(
-            "Unauthorized: Insufficient permissions to create case".to_string()
-        ));
     }
 
-    // Input validation
-    if title.is_empty() || status.is_empty() || filed_date.is_empty() {
-        return Err(ServerFnError::ServerError("Invalid input: Required fields missing".to_string()));
-    }
-
-    // Generate unique case number within transaction
-    let case_number = generate_case_number(&conn, court_id, None)?;
-
-    let sql = if judge_id.is_some() {
-        "INSERT INTO cases (
-            case_number, title, status, filed_date,
-            court_id, current_court_id, judge_id,
-            created_by, created_by_role
-         )
-         VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8)
-         RETURNING id"
-    } else {
-        "INSERT INTO cases (
-            case_number, title, status, filed_date,
-            court_id, current_court_id,
-            created_by, created_by_role
-         )
-         VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
-         RETURNING id"
-    };// Inside create_case function:
-    let sql = if judge_id.is_some() {
-        "INSERT INTO cases (
-            case_number, title, status, filed_date,
-            court_id, current_court_id, judge_id,
-            created_by, created_by_role
-         )
-         VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8)
-         RETURNING id"
-    } else {
-        "INSERT INTO cases (
-            case_number, title, status, filed_date,
-            court_id, current_court_id,
-            created_by, created_by_role
-         )
-         VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
-         RETURNING id"
-    };
-
-    let params = if let Some(judge) = judge_id {
-        vec![
-            ParameterValue::Str(case_number.clone()),
-            ParameterValue::Str(title),
-            ParameterValue::Str(status),
-            ParameterValue::Str(filed_date),
-            ParameterValue::Int64(court_id),
-            ParameterValue::Int64(judge),
-            ParameterValue::Int64(user_id_i64),
-            ParameterValue::Str(role),
-        ]
-    } else {
-        vec![
-            ParameterValue::Str(case_number.clone()),
-            ParameterValue::Str(title),
-            ParameterValue::Str(status),
-            ParameterValue::Str(filed_date),
-            ParameterValue::Int64(court_id),
-            ParameterValue::Int64(user_id_i64),
-            ParameterValue::Str(role),
-        ]
-    };
-
-    let result = conn.query(sql, &params)?;
-
-    let result = conn.query(sql, &params)?;
-
-    // Final verify of context after insert
-    let final_check = conn.query(
-        "SELECT
-            current_setting('app.current_user_id', true) as user_id,
-            current_setting('app.current_ip_address', true) as ip,
-            current_setting('app.current_user_agent', true) as agent",
-        &[]
-    )?;
-
-    let case_id = if let Some(row) = result.rows.first() {
-        match row[0] {
-            DbValue::Int64(id) => id,
-            _ => return Err(ServerFnError::ServerError("Failed to get case ID".to_string())),
-        }
-    } else {
-        return Err(ServerFnError::ServerError("No case ID returned".to_string()));
-    };
-
-    Ok(format!("Case created successfully with number {}", case_number))
+    Err(ServerFnError::ServerError("Failed to create case after multiple attempts".to_string()))
 }
 
 #[server(LogFailedCaseCreation, "/api")]
