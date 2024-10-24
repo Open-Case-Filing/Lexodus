@@ -228,7 +228,7 @@ pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
 
 #[component]
 pub fn CaseList() -> impl IntoView {
-    let cases = create_resource(|| (), |_| get_cases());
+  let cases = create_resource(|| (), |_| async move { get_cases().await });
 
     view! {
         <div class="mt-8 -mx-4 sm:mx-0">
