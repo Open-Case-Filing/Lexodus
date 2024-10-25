@@ -1,113 +1,87 @@
--- ##########################################
--- API Management System
--- ##########################################
+-- 1. First recreate tables in correct order
+DROP TABLE IF EXISTS financial_transactions CASCADE;
+DROP TABLE IF EXISTS case_fees CASCADE;
+DROP TABLE IF EXISTS fee_schedules CASCADE;
 
-CREATE TABLE api_keys (
+-- Fee schedules table (master table for all fee types)
+CREATE TABLE fee_schedules (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT REFERENCES users(id),
-    key_hash TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
-    permissions JSONB,
-    status TEXT NOT NULL DEFAULT 'ACTIVE',
-    expires_at TIMESTAMP WITH TIME ZONE,
-    last_used_at TIMESTAMP WITH TIME ZONE,
-    issued_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT REFERENCES users(id),
-    revoked_at TIMESTAMP WITH TIME ZONE,
-    revoked_by BIGINT REFERENCES users(id),
-    revocation_reason TEXT,
+    filing_type TEXT NOT NULL UNIQUE,
+    fee_amount NUMERIC(10,2) NOT NULL,
+    effective_date DATE NOT NULL,
+    end_date DATE,
+    waiver_eligible BOOLEAN DEFAULT false,
+    description TEXT,
+    category TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE api_requests (
+-- Case fees table (fees assigned to specific cases)
+CREATE TABLE case_fees (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    api_key_id BIGINT REFERENCES api_keys(id),
-    endpoint TEXT NOT NULL,
-    method TEXT NOT NULL,
-    request_body JSONB,
-    response_status INTEGER,
-    response_body JSONB,
-    ip_address INET,
-    user_agent TEXT,
-    processing_time INTEGER,
-    error_message TEXT,
-    request_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE api_rate_limits (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    api_key_id BIGINT REFERENCES api_keys(id),
-    window_size INTERVAL NOT NULL,
-    max_requests INTEGER NOT NULL,
-    current_count INTEGER DEFAULT 0,
-    window_start TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    case_id BIGINT NOT NULL,
+    case_filed_date DATE NOT NULL,
+    fee_schedule_id BIGINT REFERENCES fee_schedules(id),
+    assigned_to_id BIGINT REFERENCES users(id),
+    amount NUMERIC(10,2) NOT NULL,
+    due_date DATE,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    assigned_by BIGINT REFERENCES users(id),
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (case_id, case_filed_date) REFERENCES cases(id, filed_date)
+);
+DROP TABLE IF EXISTS financial_transactions CASCADE;
+-- Financial transactions table (actual payment records)
+CREATE TABLE financial_transactions (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    case_id BIGINT,
+    case_filed_date DATE,
+    case_fee_id BIGINT REFERENCES case_fees(id),
+    transaction_type TEXT NOT NULL,
+    amount NUMERIC(10,2) NOT NULL,
+    payment_method TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    payment_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    payer_id BIGINT REFERENCES users(id),
+    received_by BIGINT REFERENCES users(id),
+    receipt_number TEXT,
+    check_number TEXT,
+    routing_number TEXT,
+    account_last_four TEXT,
+    refund_status TEXT,
+    refund_reason TEXT,
+    parent_transaction_id BIGINT REFERENCES financial_transactions(id),
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (case_id, case_filed_date) REFERENCES cases(id, filed_date)
 );
 
--- Indexes
-CREATE INDEX idx_api_keys_user ON api_keys(user_id);
-CREATE INDEX idx_api_keys_status ON api_keys(status);
-CREATE INDEX idx_api_requests_key ON api_requests(api_key_id);
-CREATE INDEX idx_api_requests_timestamp ON api_requests(request_timestamp);
-CREATE INDEX idx_api_rate_limits_key ON api_rate_limits(api_key_id);
+-- Create all necessary indexes
+CREATE INDEX idx_case_fees_case ON case_fees(case_id, case_filed_date);
+CREATE INDEX idx_case_fees_assigned_to ON case_fees(assigned_to_id);
+CREATE INDEX idx_case_fees_status ON case_fees(status);
+CREATE INDEX idx_fee_schedules_type ON fee_schedules(filing_type);
+CREATE INDEX idx_financial_transactions_case ON financial_transactions(case_id, case_filed_date);
+CREATE INDEX idx_financial_transactions_case_fee ON financial_transactions(case_fee_id);
+CREATE INDEX idx_financial_transactions_status ON financial_transactions(status);
+CREATE INDEX idx_financial_transactions_payment_date ON financial_transactions(payment_date);
 
--- Triggers
-CREATE TRIGGER update_api_keys_timestamp
-    BEFORE UPDATE ON api_keys
+-- Create timestamp triggers
+CREATE TRIGGER update_fee_schedules_timestamp
+    BEFORE UPDATE ON fee_schedules
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_timestamp();
 
-CREATE TRIGGER update_api_rate_limits_timestamp
-    BEFORE UPDATE ON api_rate_limits
+CREATE TRIGGER update_case_fees_timestamp
+    BEFORE UPDATE ON case_fees
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_timestamp();
 
--- Rate limit update function
-CREATE OR REPLACE FUNCTION update_rate_limit()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.window_start + NEW.window_size < CURRENT_TIMESTAMP THEN
-        NEW.current_count := 1;
-        NEW.window_start := CURRENT_TIMESTAMP;
-    ELSE
-        NEW.current_count := NEW.current_count + 1;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_rate_limit_counter
-    BEFORE UPDATE ON api_rate_limits
+CREATE TRIGGER update_financial_transactions_timestamp
+    BEFORE UPDATE ON financial_transactions
     FOR EACH ROW
-    EXECUTE FUNCTION update_rate_limit();
-
--- Views (Fixed version with no nested aggregates)
-CREATE OR REPLACE VIEW vw_api_key_usage AS
-WITH endpoint_stats AS (
-    SELECT
-        api_key_id,
-        endpoint,
-        COUNT(*) as endpoint_count
-    FROM api_requests
-    GROUP BY api_key_id, endpoint
-)
-SELECT
-    ak.id as api_key_id,
-    ak.name as key_name,
-    u.username,
-    COUNT(ar.id) as total_requests,
-    COUNT(CASE WHEN ar.response_status >= 400 THEN 1 END) as error_count,
-    AVG(ar.processing_time)::INTEGER as avg_processing_time,
-    MAX(ar.request_timestamp) as last_request,
-    (
-        SELECT jsonb_object_agg(endpoint, endpoint_count)
-        FROM endpoint_stats
-        WHERE api_key_id = ak.id
-    ) as endpoint_usage
-FROM api_keys ak
-JOIN users u ON ak.user_id = u.id
-LEFT JOIN api_requests ar ON ar.api_key_id = ak.id
-WHERE ak.status = 'ACTIVE'
-GROUP BY ak.id, ak.name, u.username;
+    EXECUTE FUNCTION update_updated_at_timestamp();

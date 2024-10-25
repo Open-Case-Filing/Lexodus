@@ -2059,3 +2059,552 @@ WHERE EXISTS (
     FROM api_requests ar
     WHERE ar.api_key_id = ak.id
 );
+
+
+-- Criminal Case Types
+INSERT INTO document_types (category, name, description, requires_fee, requires_service) VALUES
+('CRIMINAL_FILING', 'Indictment', 'Criminal charging document issued by grand jury', false, true),
+('CRIMINAL_FILING', 'Criminal Complaint', 'Initial criminal charging document', false, true),
+('CRIMINAL_FILING', 'Information', 'Criminal charge filed by prosecutor', false, true),
+('CRIMINAL_FILING', 'Arrest Warrant', 'Warrant for defendant arrest', false, false),
+('CRIMINAL_FILING', 'Search Warrant', 'Warrant to search specified location', false, false),
+('CRIMINAL_MOTION', 'Motion to Suppress', 'Motion to exclude evidence', false, true),
+('CRIMINAL_MOTION', 'Motion for Detention', 'Motion for pre-trial detention', false, true),
+('CRIMINAL_ORDER', 'Detention Order', 'Order regarding pre-trial detention', false, false),
+('CRIMINAL_ORDER', 'Sentencing Order', 'Final judgment and sentencing', false, false)
+ON CONFLICT (category, name) DO NOTHING;
+
+-- Criminal Cases
+INSERT INTO cases (
+    case_number,
+    title,
+    case_type,
+    nature_of_suit,
+    status,
+    filed_date,
+    court_id,
+    assigned_judge_id,
+    security_level,
+    created_by,
+    filing_type
+)
+SELECT
+    c.case_number,
+    c.title,
+    'CRIMINAL',
+    c.nature_of_suit,
+    c.status,
+    c.filed_date::date,
+    courts.id,
+    jo.id,
+    c.security_level,
+    u.id,
+    'ELECTRONIC'
+FROM (VALUES
+    ('2:23-cr-00001', 'USA v. Johnson', 'Criminal - Drug Trafficking', 'OPEN', '2023-01-15', 'PUBLIC'),
+    ('2:23-cr-00002', 'USA v. Smith et al', 'Criminal - Wire Fraud', 'OPEN', '2023-02-01', 'PUBLIC'),
+    ('2:23-cr-00003', 'USA v. Williams', 'Criminal - Tax Evasion', 'CLOSED', '2023-03-15', 'PUBLIC'),
+    ('2:23-cr-00004', 'USA v. Brown', 'Criminal - Cybercrime', 'OPEN', '2023-04-01', 'SEALED'),
+    ('2:23-cr-00005', 'USA v. Davis', 'Criminal - RICO', 'OPEN', '2023-05-01', 'PUBLIC')
+) AS c(case_number, title, nature_of_suit, status, filed_date, security_level)
+CROSS JOIN (SELECT id FROM courts WHERE name = 'U.S. District Court for the Southern District of New York' LIMIT 1) courts
+CROSS JOIN (SELECT id FROM judicial_officers LIMIT 1) jo
+CROSS JOIN (SELECT id FROM users WHERE username = 'ckagan' LIMIT 1) u
+ON CONFLICT DO NOTHING;
+
+-- Criminal Case Parties (Defendants)
+INSERT INTO case_parties (
+    case_id,
+    case_filed_date,
+    party_type_id,
+    name,
+    is_lead,
+    address,
+    is_pro_se,
+    individual_details
+)
+SELECT
+    c.id,
+    c.filed_date,
+    pt.id,
+    p.name,
+    true,
+    jsonb_build_object(
+        'street', p.street,
+        'city', p.city,
+        'state', p.state,
+        'zip', p.zip
+    ),
+    p.is_pro_se,
+    jsonb_build_object(
+        'dob', p.dob,
+        'custody_status', p.custody_status,
+        'booking_number', p.booking_number
+    )
+FROM cases c
+CROSS JOIN (VALUES
+    ('Michael Johnson', '123 Main St', 'New York', 'NY', '10001', false, '1985-06-15', 'IN_CUSTODY', 'BK123456'),
+    ('Robert Smith', '456 Oak Ave', 'Brooklyn', 'NY', '10002', true, '1979-03-22', 'RELEASED', 'BK123457'),
+    ('James Williams', '789 Pine St', 'Queens', 'NY', '10003', false, '1990-11-30', 'IN_CUSTODY', 'BK123458'),
+    ('David Brown', '321 Elm St', 'Manhattan', 'NY', '10004', false, '1982-08-25', 'IN_CUSTODY', 'BK123459'),
+    ('Richard Davis', '654 Maple Dr', 'Bronx', 'NY', '10005', false, '1975-12-18', 'IN_CUSTODY', 'BK123460')
+) as p(name, street, city, state, zip, is_pro_se, dob, custody_status, booking_number)
+JOIN party_types pt ON pt.name = 'DEFENDANT'
+WHERE c.case_type = 'CRIMINAL'
+AND c.case_number LIKE '2:23-cr-%'
+ON CONFLICT DO NOTHING;
+
+-- Criminal Case Documents
+INSERT INTO documents (
+    case_id,
+    case_filed_date,
+    document_type_id,
+    title,
+    description,
+    storage_path,
+    checksum,
+    file_size,
+    security_level,
+    filed_by,
+    filed_date,
+    is_electronic,
+    metadata
+)
+SELECT
+    c.id,
+    c.filed_date,
+    dt.id,
+    d.title,
+    d.description,
+    '/documents/' || c.case_number || '/' || lower(replace(d.title, ' ', '_')) || '.pdf',
+    md5(d.title || c.case_number)::text,
+    d.file_size,
+    c.security_level,
+    u.id,
+    c.filed_date + d.days_offset,
+    true,
+    jsonb_build_object(
+        'document_subtype', d.subtype,
+        'under_seal', d.under_seal,
+        'contains_pii', true,
+        'redaction_status', 'COMPLETED'
+    )
+FROM cases c
+CROSS JOIN (VALUES
+    ('Indictment', 'Grand Jury Indictment', 0, 1500, 'CHARGING_DOCUMENT', false),
+    ('Arrest Warrant', 'Warrant for Arrest', 0, 500, 'WARRANT', true),
+    ('Motion for Detention', 'Pre-trial Detention Request', 1, 2000, 'MOTION', false),
+    ('Detention Order', 'Order on Detention', 2, 1000, 'ORDER', false),
+    ('Initial Appearance Minutes', 'Minutes from Initial Appearance', 3, 800, 'MINUTES', false)
+) as d(title, description, days_offset, file_size, subtype, under_seal)
+JOIN document_types dt ON dt.category LIKE 'CRIMINAL_%'
+CROSS JOIN (SELECT id FROM users WHERE username = 'pclement' LIMIT 1) u
+WHERE c.case_type = 'CRIMINAL'
+AND c.case_number LIKE '2:23-cr-%'
+ON CONFLICT DO NOTHING;
+
+-- Criminal Case Events
+INSERT INTO case_events (
+    case_id,
+    case_filed_date,
+    event_type_id,
+    event_date,
+    title,
+    description,
+    public_entry,
+    filed_by,
+    entered_by,
+    event_status,
+    document_number
+)
+SELECT
+    c.id,
+    c.filed_date,
+    et.id,
+    c.filed_date + e.days_offset,
+    e.title,
+    e.description,
+    e.public_entry,
+    u_filing.id,
+    u_clerk.id,
+    'COMPLETED',
+    'CR-' || ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY e.days_offset)
+FROM cases c
+CROSS JOIN (VALUES
+    (0, 'Initial Appearance', 'Defendant Initial Appearance', 'Initial appearance held before Magistrate Judge'),
+    (0, 'Arraignment', 'Arraignment on Indictment', 'Defendant arraigned on indictment'),
+    (1, 'Detention Hearing', 'Hearing on Pre-trial Detention', 'Detention hearing held'),
+    (7, 'Status Conference', 'Status Conference Held', 'Status conference with counsel'),
+    (14, 'Motion Hearing', 'Hearing on Pending Motions', 'Motion hearing held')
+) as e(days_offset, title, description, public_entry)
+JOIN event_types et ON et.name = 'HEARING'
+CROSS JOIN (SELECT id FROM users WHERE username = 'pclement' LIMIT 1) u_filing
+CROSS JOIN (SELECT id FROM users WHERE username = 'ckagan' LIMIT 1) u_clerk
+WHERE c.case_type = 'CRIMINAL'
+AND c.case_number LIKE '2:23-cr-%'
+ON CONFLICT DO NOTHING;
+
+-- Criminal Calendar Events
+INSERT INTO calendar_events (
+    title,
+    description,
+    event_type,
+    priority,
+    start_time,
+    end_time,
+    location_type,
+    location_details,
+    case_id,
+    case_filed_date,
+    organizer_id,
+    participants,
+    status,
+    created_by
+)
+SELECT
+    ce.title,
+    ce.description,
+    'HEARING',
+    'HIGH',
+    ce.event_date,
+    ce.event_date + interval '1 hour',
+    'COURTROOM',
+    jsonb_build_object(
+        'courtroom', 'Courtroom 12A',
+        'floor', '12th Floor',
+        'building', 'Main Courthouse',
+        'security_requirements', ARRAY['USMS Present', 'Extra Security']
+    ),
+    c.id,
+    c.filed_date,
+    u_judge.id,
+    jsonb_build_array(
+        jsonb_build_object('role', 'JUDGE', 'user_id', u_judge.id),
+        jsonb_build_object('role', 'AUSA', 'user_id', u_prosecutor.id),
+        jsonb_build_object('role', 'CLERK', 'user_id', u_clerk.id)
+    ),
+    'SCHEDULED',
+    u_clerk.id
+FROM cases c
+JOIN case_events ce ON c.id = ce.case_id
+CROSS JOIN (SELECT id FROM users WHERE username = 'jroberts' LIMIT 1) u_judge
+CROSS JOIN (SELECT id FROM users WHERE username = 'pclement' LIMIT 1) u_prosecutor
+CROSS JOIN (SELECT id FROM users WHERE username = 'ckagan' LIMIT 1) u_clerk
+WHERE c.case_type = 'CRIMINAL'
+AND c.case_number LIKE '2:23-cr-%'
+AND ce.title IN ('Initial Appearance', 'Arraignment', 'Detention Hearing')
+ON CONFLICT DO NOTHING;
+
+
+-- Add more detailed document types
+INSERT INTO document_types (category, name, description, requires_fee, requires_service, requires_judicial_review) VALUES
+('RESTRICTED', 'Sealed Exhibit', 'Confidential exhibit under seal', false, false, true),
+('RESTRICTED', 'In Camera Filing', 'Document for court review only', false, false, true),
+('RESTRICTED', 'Grand Jury Material', 'Secret grand jury proceedings', false, false, true),
+('VERSION_CONTROL', 'Amended Complaint', 'Modified complaint with amendments', true, true, false),
+('VERSION_CONTROL', 'Revised Motion', 'Updated motion with changes', false, true, false),
+('LARGE_FILE', 'Video Evidence', 'Video exhibition evidence', false, false, false),
+('LARGE_FILE', 'Trial Transcript', 'Complete trial transcript', true, false, false),
+('ERROR_CASE', 'Rejected Filing', 'Document rejected for errors', false, false, false),
+('ERROR_CASE', 'Incomplete Filing', 'Filing missing required elements', false, false, false)
+ON CONFLICT (category, name) DO NOTHING;
+
+-- Add documents with various security levels and scenarios
+INSERT INTO documents (
+    case_id,
+    case_filed_date,
+    document_type_id,
+    title,
+    description,
+    storage_path,
+    checksum,
+    file_size,
+    security_level,
+    filed_by,
+    filed_date,
+    is_electronic,
+    is_sealed,
+    metadata
+)
+SELECT
+    c.id,
+    c.filed_date,
+    dt.id,
+    d.title,
+    d.description,
+    '/documents/' || c.case_number || '/' || lower(replace(d.title, ' ', '_')) || '.pdf',
+    md5(d.title || c.case_number || clock_timestamp()::text)::text,
+    d.file_size,
+    d.security_level,
+    u.id,
+    c.filed_date + (d.days_offset || ' days')::interval,
+    true,
+    d.is_sealed,
+    jsonb_build_object(
+        'version', d.version,
+        'content_type', d.content_type,
+        'redaction_status', d.redaction_status,
+        'ocr_status', d.ocr_status,
+        'page_count', d.page_count,
+        'contains_pii', d.contains_pii,
+        'error_details', d.error_details,
+        'rejection_reason', d.rejection_reason
+    )
+FROM (
+    SELECT id, case_number, filed_date
+    FROM cases
+    WHERE case_number IN ('1:20-cv-03010', '2:23-cr-00001')
+    LIMIT 2
+) c
+CROSS JOIN (VALUES
+    ('Sealed Financial Records', 'Confidential financial exhibits', 1, 5000000, 'SEALED', true, 1, 'application/pdf', 'COMPLETED', 'COMPLETED', 150, true, null, null, 0),
+    ('Grand Jury Testimony A', 'Secret grand jury witness statement', 2, 2000000, 'SEALED', true, 1, 'application/pdf', 'COMPLETED', 'COMPLETED', 75, true, null, null, 1),
+    ('Surveillance Video Evidence', 'Security camera footage', 5, 500000000, 'RESTRICTED', false, 1, 'video/mp4', 'NOT_REQUIRED', 'FAILED', 1, false, 'Video codec not supported', 'Invalid file format', 2),
+    ('Original Complaint', 'Initial complaint filing', 0, 1500000, 'PUBLIC', false, 1, 'application/pdf', 'COMPLETED', 'COMPLETED', 45, false, null, null, 3),
+    ('Amended Complaint v1', 'First amended complaint', 10, 1600000, 'PUBLIC', false, 2, 'application/pdf', 'IN_PROGRESS', 'COMPLETED', 48, false, null, null, 4),
+    ('Amended Complaint v2', 'Second amended complaint', 20, 1650000, 'PUBLIC', false, 3, 'application/pdf', 'PENDING', 'COMPLETED', 52, false, null, null, 5),
+    ('Failed Filing Example', 'Rejected document example', 1, 1000000, 'PUBLIC', false, 1, 'application/pdf', 'FAILED', 'FAILED', 30, false, 'Missing signature', 'Signature required', 6),
+    ('Large Evidence Bundle', 'Collection of evidence files', 3, 1500000000, 'PUBLIC', false, 1, 'application/zip', 'PENDING', 'IN_PROGRESS', 500, false, null, null, 7),
+    ('In Camera Review Doc', 'For judicial review only', 4, 3000000, 'SEALED', true, 1, 'application/pdf', 'COMPLETED', 'COMPLETED', 100, true, null, null, 8),
+    ('Corrupted Document', 'Unreadable file example', 1, 500000, 'PUBLIC', false, 1, 'application/pdf', 'FAILED', 'FAILED', 0, false, 'File corruption detected', 'File is corrupted', 9)
+) as d(title, description, days_offset, file_size, security_level, is_sealed, version, content_type, redaction_status, ocr_status, page_count, contains_pii, error_details, rejection_reason, doc_order)
+JOIN document_types dt ON dt.category IN ('RESTRICTED', 'VERSION_CONTROL', 'LARGE_FILE', 'ERROR_CASE')
+CROSS JOIN (SELECT id FROM users WHERE username = 'pclement' LIMIT 1) u
+ON CONFLICT DO NOTHING;
+
+-- Add document versions to track changes
+INSERT INTO document_versions (
+    document_id,
+    version_number,
+    storage_path,
+    checksum,
+    file_size,
+    changed_by,
+    change_reason,
+    change_summary,
+    created_at
+)
+SELECT
+    d.id,
+    v.version_number,
+    d.storage_path || '.v' || v.version_number,
+    md5(d.storage_path || v.version_number || clock_timestamp()::text)::text,
+    d.file_size + (v.version_number * 1000),
+    u.id,
+    v.change_reason,
+    v.change_summary,
+    d.filed_date + (v.version_number || ' days')::interval
+FROM documents d
+CROSS JOIN (VALUES
+    (1, 'Initial version', 'Original filing'),
+    (2, 'Added exhibits', 'Updated with additional exhibits'),
+    (3, 'Fixed errors', 'Corrected clerical errors'),
+    (4, 'Updated content', 'Revised based on court feedback')
+) as v(version_number, change_reason, change_summary)
+JOIN users u ON u.username = 'pclement'
+WHERE d.title LIKE 'Amended Complaint v%'
+ON CONFLICT DO NOTHING;
+
+-- Add document processing queue entries
+INSERT INTO document_processing_queue (
+    document_id,
+    process_type,
+    priority,
+    status,
+    attempts,
+    last_attempt,
+    error_message
+)
+SELECT
+    d.id,
+    p.process_type,
+    p.priority,
+    p.status,
+    p.attempts,
+    CASE WHEN p.attempts > 0 THEN NOW() - (random() * interval '1 day') ELSE NULL END,
+    p.error_message
+FROM documents d
+CROSS JOIN (VALUES
+    ('OCR', 1, 'COMPLETED', 1, NULL),
+    ('VIRUS_SCAN', 1, 'COMPLETED', 1, NULL),
+    ('FORMAT_CONVERSION', 2, 'FAILED', 3, 'Unsupported file format'),
+    ('REDACTION', 1, 'IN_PROGRESS', 1, NULL),
+    ('METADATA_EXTRACTION', 3, 'PENDING', 0, NULL)
+) as p(process_type, priority, status, attempts, error_message)
+WHERE d.file_size > 1000000
+ON CONFLICT DO NOTHING;
+
+-- Add document access logs with various scenarios
+INSERT INTO document_access_logs (
+    document_id,
+    user_id,
+    access_type,
+    access_timestamp,
+    ip_address,
+    user_agent,
+    access_location,
+    success,
+    failure_reason
+)
+SELECT
+    d.id,
+    u.id,
+    a.access_type,
+    NOW() - (random() * interval '30 days'),
+    (ARRAY['10.0.0.1', '192.168.1.100', '172.16.0.1'])[floor(random() * 3 + 1)]::inet,
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    a.location,
+    a.success,
+    a.failure_reason
+FROM documents d
+CROSS JOIN (VALUES
+    ('VIEW', 'Office', true, NULL),
+    ('DOWNLOAD', 'Remote', false, 'Insufficient permissions'),
+    ('PRINT', 'Office', true, NULL),
+    ('VIEW', 'Remote', false, 'Invalid security token'),
+    ('DOWNLOAD', 'Office', true, NULL)
+) as a(access_type, location, success, failure_reason)
+CROSS JOIN (SELECT id FROM users WHERE username IN ('pclement', 'ckagan', 'jroberts') LIMIT 3) u
+WHERE d.security_level IN ('PUBLIC', 'RESTRICTED')
+ON CONFLICT DO NOTHING;
+
+-- Add document relationships
+INSERT INTO document_relationships (
+    source_document_id,
+    target_document_id,
+    relationship_type
+)
+SELECT
+    d1.id as source_id,
+    d2.id as target_id,
+    r.relationship_type
+FROM documents d1
+CROSS JOIN documents d2
+CROSS JOIN (VALUES
+    ('SUPERSEDES'),
+    ('ATTACHMENT_TO'),
+    ('REFERENCED_BY'),
+    ('RESPONSE_TO')
+) as r(relationship_type)
+WHERE d1.id != d2.id
+AND d1.case_id = d2.case_id
+AND d1.title LIKE 'Amended%'
+AND d2.title LIKE 'Original%'
+ON CONFLICT DO NOTHING;
+
+
+-- Now let's add the mock data
+INSERT INTO fee_schedules (
+    filing_type,
+    fee_amount,
+    effective_date,
+    waiver_eligible,
+    description,
+    category
+) VALUES
+    ('NEW_CASE_CIVIL', 402.00, '2024-01-01', true, 'Civil case filing fee', 'FILING'),
+    ('NEW_CASE_CRIMINAL', 0.00, '2024-01-01', false, 'Criminal case filing fee', 'FILING'),
+    ('APPEAL', 505.00, '2024-01-01', true, 'Notice of appeal', 'APPEAL'),
+    ('PRO_HAC_VICE', 200.00, '2024-01-01', false, 'Pro hac vice admission', 'ADMISSION'),
+    ('MOTION_DISPOSITIVE', 50.00, '2024-01-01', true, 'Dispositive motion fee', 'MOTION'),
+    ('CERTIFICATION', 25.00, '2024-01-01', false, 'Document certification', 'SERVICE'),
+    ('COPY_REGULAR', 0.50, '2024-01-01', false, 'Standard copy fee per page', 'SERVICE'),
+    ('COPY_CERTIFIED', 1.00, '2024-01-01', false, 'Certified copy fee per page', 'SERVICE'),
+    ('RECORD_SEARCH', 32.00, '2024-01-01', false, 'Record search fee', 'SERVICE'),
+    ('RETURNED_CHECK', 53.00, '2024-01-01', false, 'Returned check fee', 'PENALTY')
+ON CONFLICT (filing_type) DO UPDATE SET
+    fee_amount = EXCLUDED.fee_amount,
+    description = EXCLUDED.description,
+    category = EXCLUDED.category;
+
+-- Create some case fees
+INSERT INTO case_fees (
+    case_id,
+    case_filed_date,
+    fee_schedule_id,
+    assigned_to_id,
+    amount,
+    due_date,
+    status,
+    assigned_by,
+    notes
+)
+SELECT
+    c.id,
+    c.filed_date,
+    fs.id,
+    u_assigned.id,
+    CASE
+        WHEN c.case_type = 'CRIMINAL' THEN 0.00  -- Criminal cases have no filing fee
+        WHEN fs.filing_type = 'NEW_CASE_CIVIL' THEN fs.fee_amount
+        ELSE fs.fee_amount
+    END,
+    CASE
+        WHEN fs.category = 'FILING' THEN c.filed_date + interval '1 day'
+        ELSE c.filed_date + interval '30 days'
+    END,
+    CASE
+        WHEN c.case_type = 'CRIMINAL' THEN 'WAIVED'
+        ELSE 'PENDING'
+    END,
+    u_clerk.id,
+    CASE
+        WHEN c.case_type = 'CRIMINAL' THEN 'Criminal case - no fee required'
+        ELSE 'Standard filing fee for ' || c.case_type || ' case'
+    END
+FROM cases c
+CROSS JOIN (
+    SELECT id, filing_type, fee_amount, category
+    FROM fee_schedules
+    WHERE filing_type IN ('NEW_CASE_CIVIL', 'NEW_CASE_CRIMINAL')
+) fs
+CROSS JOIN (SELECT id FROM users WHERE username = 'pclement') u_assigned
+CROSS JOIN (SELECT id FROM users WHERE username = 'ckagan') u_clerk
+WHERE c.case_number IN ('1:20-cv-03010', '2:23-cr-00001')
+ON CONFLICT DO NOTHING;
+
+-- Add some financial transactions
+INSERT INTO financial_transactions (
+    case_id,
+    case_filed_date,
+    case_fee_id,
+    transaction_type,
+    amount,
+    payment_method,
+    status,              -- Changed from payment_status to status
+    payment_date,
+    payer_id,
+    received_by,
+    receipt_number,
+    metadata
+)
+SELECT
+    cf.case_id,
+    cf.case_filed_date,
+    cf.id as case_fee_id,
+    'FILING_FEE',
+    cf.amount,
+    'CREDIT_CARD',
+    'COMPLETED',
+    cf.created_at + interval '1 hour',
+    cf.assigned_to_id,
+    cf.assigned_by,
+    'RCPT-' || to_char(current_date, 'YYYYMMDD') || '-' || LPAD(cf.id::text, 4, '0'),
+    jsonb_build_object(
+        'terminal_id', 'TERM001',
+        'transaction_location', 'COURTHOUSE',
+        'auth_code', md5(random()::text)
+    )
+FROM case_fees cf
+WHERE cf.status = 'PENDING'
+AND cf.amount > 0
+LIMIT 1;
+
+-- Update case fee status based on payment
+UPDATE case_fees cf
+SET status = 'PAID'
+WHERE id IN (
+    SELECT DISTINCT case_fee_id
+    FROM financial_transactions
+    WHERE status = 'COMPLETED'    -- Changed from payment_status to status
+);
