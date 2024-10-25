@@ -2,7 +2,6 @@ mod app;
 
 mod functions;
 mod layouts;
-mod models;
 mod pages;
 
 mod domain;
