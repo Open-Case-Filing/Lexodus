@@ -16,7 +16,18 @@ rustup target add wasm32-wasi
 ```
 
 ## Run the project
+LEPTOS_OUTPUT_NAME must be set to lexodus in the environment
+
+you can do this in the build command, like the following
 ```bash
+LEPTOS_OUTPUT_NAME=lexodus spin up --build
+```
+```powershell
+$env:LEPTOS_OUTPUT_NAME="lexodus"; spin up --build
+```
+
+or, if you set it on your machine, you can just 
+```
 spin up --build
 ```
 
