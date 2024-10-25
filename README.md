@@ -15,6 +15,11 @@ rustup target add wasm32-unknown-unknown &&\
 rustup target add wasm32-wasi
 ```
 
+start local db
+```
+docker run --name ocfs-pg -e POSTGRES_USER=app_user -e POSTGRES_PASSWORD=dev_only_pwd -e POSTGRES_DB=app_db -p 5432:5432 -d postgres:latest
+```
+
 ## Run the project
 ```bash
 spin up --build
