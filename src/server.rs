@@ -25,7 +25,7 @@ async fn handle_lexodus(req: IncomingRequest, resp_out: ResponseOutparam) {
     // println!("Configuration: {}", response);
 
     // register_explicit::<crate::pages::cases::UpdateCount>();
-    let app_router = crate::app::App;
+    let app_router = crate::routes::App;
 
     let mut routes = RouteTable::build(app_router);
     routes.add_server_fn_prefix("/api").unwrap();
