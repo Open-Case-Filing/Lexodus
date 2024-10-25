@@ -1,10 +1,10 @@
+use crate::domain::models::user::SafeUser;
 use crate::layouts::default::*;
+use crate::providers::auth::AuthContext;
 use leptos::*;
 use leptos_meta::{Meta, Title};
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-use crate::domain::models::user::SafeUser;
-use crate::providers::auth::AuthContext;
 
 use cfg_if::cfg_if;
 
@@ -17,6 +17,8 @@ cfg_if! {
         use spin_sdk::http::{Request, Headers};
         use chrono::Utc;
         use rand::Rng;
+        use crate::errors::LexodusAppError;
+        use log::{info, error};
 
         fn case_number_exists(conn: &Connection, case_number: &str, filed_date: &str) -> Result<bool, ServerFnError> {
             let result = conn.query(
@@ -106,20 +108,19 @@ cfg_if! {
     }
 }
 
-
-
 #[cfg(feature = "ssr")]
 fn get_client_ip(req: &Request) -> String {
-    let forwarded = req.header("x-forwarded-for")
-        .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+    let forwarded = req
+        .header("x-forwarded-for")
+        .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
         .and_then(|s| s.split(',').next())
         .map(|s| s.trim())
-        .unwrap_or_else(||
+        .unwrap_or_else(|| {
             req.header("x-real-ip")
-                .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+                .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
                 .map(|s| s.trim())
                 .unwrap_or("unknown")
-        )
+        })
         .to_string();
 
     forwarded
@@ -128,11 +129,10 @@ fn get_client_ip(req: &Request) -> String {
 #[cfg(feature = "ssr")]
 fn get_user_agent(req: &Request) -> String {
     req.header("user-agent")
-        .and_then(|v| v.as_str())  // as_str() already returns Option<&str>
+        .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
         .unwrap_or("unknown")
         .to_string()
 }
-
 
 #[component]
 pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
@@ -141,8 +141,6 @@ pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
 
     let judges = create_resource(|| (), |_| get_judges());
     let courts = create_resource(|| (), |_| get_courts());
-
-
 
     view! {
         <section class="bg-white p-6 rounded-lg shadow-lg border border-lexodus-200 mt-8 relative">
@@ -222,13 +220,9 @@ pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
     }
 }
 
-
-
-
-
 #[component]
 pub fn CaseList() -> impl IntoView {
-  let cases = create_resource(|| (), |_| async move { get_cases().await });
+    let cases = create_resource(|| (), |_| async move { get_cases().await });
 
     view! {
         <div class="mt-8 -mx-4 sm:mx-0">
@@ -310,7 +304,7 @@ pub fn CaseList() -> impl IntoView {
 
 #[component]
 pub fn CaseManagement() -> impl IntoView {
-  let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
     let (show_form, set_show_form) = create_signal(false);
     view! {
         <Meta property="og:title" content="Case Management | Lexodus"/>
@@ -430,7 +424,7 @@ pub struct Case {
     pub current_court_name: String,
     pub judge_id: Option<i64>,
     pub judge_name: Option<String>,
-    pub user_id: String
+    pub user_id: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -457,15 +451,27 @@ pub async fn create_case(
     judge_id: Option<i64>,
     user_id: String,
 ) -> Result<String, ServerFnError> {
-    let user_id_i64 = match user_id.parse::<i64>() {
-        Ok(id) => id,
-        Err(_) => return Err(ServerFnError::ServerError("Invalid user ID format".to_string()))
-    };
+    info!("Starting case creation process");
 
-    let db_url = variables::get("db_url").unwrap();
-    let conn = Connection::open(&db_url)?;
+    // Parse user ID
+    let user_id_i64 = user_id.parse::<i64>().map_err(|_| {
+        error!("Invalid user ID format: {}", user_id);
+        LexodusAppError::BadRequest("Invalid user ID format".into())
+    })?;
 
-    for attempt in 1..=10 {  // Try up to 10 times
+    // Get database connection
+    let db_url = variables::get("db_url").map_err(|e| {
+        error!("Failed to open database connection: {}", e);
+        LexodusAppError::DBConnectionNotFound
+    })?;
+
+    let conn = Connection::open(&db_url).map_err(|e| {
+        error!("Failed to get database URL: {}", e);
+        LexodusAppError::DBError(e.to_string())
+    })?;
+
+    for attempt in 1..=10 {
+        // Try up to 10 times
         // Start transaction
         conn.execute("BEGIN", &[])?;
 
@@ -479,7 +485,7 @@ pub async fn create_case(
                 ParameterValue::Str(user_id.clone()),
                 ParameterValue::Str("0.0.0.0".to_string()),
                 ParameterValue::Str("Lexodus Web Client".to_string()),
-            ]
+            ],
         )?;
 
         // First fetch user's role
@@ -488,7 +494,7 @@ pub async fn create_case(
              FROM users u
              JOIN roles r ON r.id = u.role_id
              WHERE u.id = $1",
-            &[ParameterValue::Int64(user_id_i64)]
+            &[ParameterValue::Int64(user_id_i64)],
         )?;
 
         let role = if let Some(row) = user_info.rows.first() {
@@ -553,7 +559,10 @@ pub async fn create_case(
         if !result.rows.is_empty() {
             // Case was successfully inserted
             conn.execute("COMMIT", &[])?;
-            return Ok(format!("Case created successfully with number {}", case_number));
+            return Ok(format!(
+                "Case created successfully with number {}",
+                case_number
+            ));
         } else {
             // Conflict occurred, rollback and try again
             conn.execute("ROLLBACK", &[])?;
@@ -561,7 +570,9 @@ pub async fn create_case(
         }
     }
 
-    Err(ServerFnError::ServerError("Failed to create case after multiple attempts".to_string()))
+    Err(ServerFnError::ServerError(
+        "Failed to create case after multiple attempts".to_string(),
+    ))
 }
 
 #[server(LogFailedCaseCreation, "/api")]
@@ -571,7 +582,11 @@ pub async fn log_failed_case_creation(
 ) -> Result<(), ServerFnError> {
     let user_id_i64 = match user_id.parse::<i64>() {
         Ok(id) => id,
-        Err(_) => return Err(ServerFnError::ServerError("Invalid user ID format".to_string()))
+        Err(_) => {
+            return Err(ServerFnError::ServerError(
+                "Invalid user ID format".to_string(),
+            ))
+        }
     };
 
     let db_url = variables::get("db_url").unwrap();
@@ -584,7 +599,7 @@ pub async fn log_failed_case_creation(
             ParameterValue::Int64(user_id_i64),
             ParameterValue::Str("create_case".to_string()),
             ParameterValue::Str(reason),
-        ]
+        ],
     )?;
 
     Ok(())
@@ -655,7 +670,7 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
             },
             user_id: match &row[11] {
                 DbValue::Str(user_id) => user_id.clone(),
-                _ => "-1".to_string(),  // Default value if user_id is not found
+                _ => "-1".to_string(), // Default value if user_id is not found
             },
         })
         .collect();
