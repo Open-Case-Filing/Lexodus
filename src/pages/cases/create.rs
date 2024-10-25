@@ -108,31 +108,6 @@ cfg_if! {
     }
 }
 
-#[cfg(feature = "ssr")]
-fn get_client_ip(req: &Request) -> String {
-    let forwarded = req
-        .header("x-forwarded-for")
-        .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
-        .and_then(|s| s.split(',').next())
-        .map(|s| s.trim())
-        .unwrap_or_else(|| {
-            req.header("x-real-ip")
-                .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
-                .map(|s| s.trim())
-                .unwrap_or("unknown")
-        })
-        .to_string();
-
-    forwarded
-}
-
-#[cfg(feature = "ssr")]
-fn get_user_agent(req: &Request) -> String {
-    req.header("user-agent")
-        .and_then(|v| v.as_str()) // as_str() already returns Option<&str>
-        .unwrap_or("unknown")
-        .to_string()
-}
 
 #[component]
 pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
@@ -806,12 +781,26 @@ pub async fn update_case_status(case_id: i64, new_status: String) -> Result<Stri
 
 #[server(GetJudges, "/api")]
 pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
-    let db_url = variables::get("db_url").unwrap();
-    let conn = Connection::open(&db_url)?;
+    // Get database connection
+    let db_url = variables::get("db_url")
+        .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
 
-    let sql = "SELECT id, name, court_id FROM judges";
+    // Open Connection
+    let conn = Connection::open(&db_url)
+        .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
-    let rowset = conn.query(sql, &[])?;
+    let sql = "SELECT
+                jo.id,
+                u.full_name as name,
+                jo.court_id
+               FROM judicial_officers jo
+               JOIN users u ON jo.user_id = u.id
+               WHERE jo.status = 'ACTIVE'
+               ORDER BY u.full_name";
+
+    let rowset = conn.query(sql, &[])
+        .map_err(|e| LexodusAppError::DBError("Failed to execute query".to_string()))?;
+
     let judges: Vec<Judge> = rowset
         .rows
         .iter()
@@ -836,12 +825,25 @@ pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
 
 #[server(GetCourts, "/api")]
 pub async fn get_courts() -> Result<Vec<Court>, ServerFnError> {
-    let db_url = variables::get("db_url").unwrap();
-    let conn = Connection::open(&db_url)?;
+    // Get database connection
+    let db_url = variables::get("db_url")
+        .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
 
-    let sql = "SELECT id, name, district, circuit FROM courts";
+    // Open Connection
+    let conn = Connection::open(&db_url)
+        .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
-    let rowset = conn.query(sql, &[])?;
+    let sql = "SELECT
+                c.id,
+                c.name,
+                c.district,
+                c.circuit
+               FROM courts c
+               ORDER BY c.name";
+
+    let rowset = conn.query(sql, &[])
+        .map_err(|e| LexodusAppError::DBError("Failed to execute query".to_string()))?;
+
     let courts: Vec<Court> = rowset
         .rows
         .iter()
