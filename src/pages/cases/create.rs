@@ -471,7 +471,6 @@ pub async fn create_case(
     })?;
 
     for attempt in 1..=10 {
-        // Try up to 10 times
         // Start transaction
         conn.execute("BEGIN", &[])?;
 
@@ -502,12 +501,16 @@ pub async fn create_case(
                 DbValue::Str(role) => role.clone(),
                 _ => {
                     conn.execute("ROLLBACK", &[])?;
-                    return Err(ServerFnError::ServerError("Invalid role data".to_string()));
+                    return Err(ServerFnError::from(LexodusAppError::ServerError(
+                        "Invalid role data".into(),
+                    )));
                 }
             }
         } else {
             conn.execute("ROLLBACK", &[])?;
-            return Err(ServerFnError::ServerError("User not found".to_string()));
+            return Err(ServerFnError::from(LexodusAppError::ServerError(
+                "User not found".into(),
+            )));
         };
 
         // Generate unique case number
@@ -563,16 +566,16 @@ pub async fn create_case(
                 "Case created successfully with number {}",
                 case_number
             ));
-        } else {
-            // Conflict occurred, rollback and try again
-            conn.execute("ROLLBACK", &[])?;
-            println!("Attempt {} failed due to conflict. Retrying...", attempt);
         }
+
+        // Conflict occurred, rollback and try again
+        conn.execute("ROLLBACK", &[])?;
+        println!("Attempt {} failed due to conflict. Retrying...", attempt);
     }
 
-    Err(ServerFnError::ServerError(
-        "Failed to create case after multiple attempts".to_string(),
-    ))
+    Err(ServerFnError::from(LexodusAppError::ServerError(
+        "Failed to create case after multiple attempts".into(),
+    )))
 }
 
 #[server(LogFailedCaseCreation, "/api")]
