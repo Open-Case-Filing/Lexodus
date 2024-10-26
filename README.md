@@ -1,6 +1,39 @@
 # Lexodus
 
-# Deps
+## Development Setup
+
+### Prerequisites and Dependencies
+
+#### 1. Install cargo-make
+```bash
+cargo install cargo-make
+```
+
+#### 2. Available Tasks
+
+| Command | Description |
+|---------|-------------|
+| `cargo make lexodus` | Main task: runs format, build, and test in sequence |
+| `cargo make dev` | Start development server with hot-reload |
+| `cargo make build` | Build the project using Spin |
+| `cargo make test` | Run the test suite |
+| `cargo make format` | Format the code using rustfmt |
+| `cargo make clean` | Clean build artifacts |
+
+#### 3. Development Workflow
+
+To start development:
+```bash
+cargo make dev    # Start dev server with hot-reload
+cargo make build  # Build the project
+cargo make test   # Run tests
+cargo make format # Format code
+```
+
+Full development cycle:
+```bash
+cargo make lexodus # Runs format, build, and test
+```
 ## Install spin
 ```bash
 brew install brew/spin
@@ -15,6 +48,10 @@ rustup target add wasm32-unknown-unknown &&\
 rustup target add wasm32-wasi
 ```
 
+## start local postgres db
+```
+docker run --name ocfs-pg -e POSTGRES_USER=app_user -e POSTGRES_PASSWORD=dev_only_pwd -e POSTGRES_DB=app_db -p 5432:5432 -d postgres:latest
+```
 ## Run the project
 ```bash
 spin up --build
@@ -133,6 +170,11 @@ pub async fn verify_signature(document_id: i64, signature: String) -> Result<boo
 5. `server/commands/user_management.rs`:
 ```rust
 pub async fn set_notification_preference(user_id: i64, notification_type: String, enabled: bool) -> Result<String, ServerFnError> { /* ... */ }
+
+pub async fn update_user_settings(user_id: i64, settings: UserSettings) -> Result<String, ServerFnError> { /* ... */ }
+pub async fn update_user_profile(user_id: i64, profile: UserProfile) -> Result<String, ServerFnError> { /* ... */ }
+pub async fn update_user_password(user_id: i64, old_password: String, new_password: String) -> Result<String, ServerFnError> { /* ... */ }
+
 pub async fn update_user_presence(user_id: i64, status: String) -> Result<String, ServerFnError> { /* ... */ }
 ```
 
