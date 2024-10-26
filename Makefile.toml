@@ -1,0 +1,39 @@
+[tasks.format]
+# Installs rustfmt if not already installed
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+description = "Formats the code using rustfmt"
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+description = "Cleans the build artifacts"
+
+[tasks.build]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin up --build"]
+description = "Builds the project using Spin"
+dependencies = ["clean"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+description = "Runs the test suite"
+dependencies = ["clean"]
+
+[tasks.lexodus]
+description = "Main task that runs format, build, and test in sequence"
+dependencies = [
+    "format",
+    "build",
+    "test"
+]
+
+
+# Soin watch
+[tasks.dev]
+description = "Development task with hot-reload"
+dependencies = ["clean"]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin watch"]

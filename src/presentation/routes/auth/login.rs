@@ -54,7 +54,7 @@ pub fn Login(action: Action<functions::auth::Login, Result<(), ServerFnError>>) 
                 </div>
                            <div class="flex items-center justify-between">
               <div class="flex items-center">
-                
+
               </div>
               <div class="text-center text-sm text-gray-500">
                 "Don't have an account?"
