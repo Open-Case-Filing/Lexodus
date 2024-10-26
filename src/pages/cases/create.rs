@@ -411,7 +411,6 @@ pub fn CaseManagement() -> impl IntoView {
                         "Create New Case"
                     </button>
                 </div>
-                <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
                 <Transition fallback=move || ()>
                   {move || {
                       let user = move || {
@@ -424,15 +423,17 @@ pub fn CaseManagement() -> impl IntoView {
                       };
                       view! {
                         <Show when=move || user().is_some() fallback=|| ().into_view()>
+                          <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
                           <CreateCaseForm user=user()/>
+                            </div>
+                            <CaseList/>
                         </Show>
                       }
                   }}
 
                 </Transition>
 
-                </div>
-                <CaseList />
+
             </div>
         </DefaultLayout>
     }

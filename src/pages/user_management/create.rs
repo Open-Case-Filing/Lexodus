@@ -5,7 +5,7 @@ use leptos_meta::Meta;
 use leptos_meta::Title;
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-
+use crate::providers::auth::AuthContext;
 
 
 
@@ -31,6 +31,8 @@ pub async fn create_user(
     role_id: i64,
 ) -> Result<String, ServerFnError> {
     println!("--> Adding a new user: {}", username);
+    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
 
