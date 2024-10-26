@@ -1,24 +1,280 @@
 # Lexodus
 
-# Deps
-## Install spin
+## Mission
+Lexodus aims to revolutionize judicial systems worldwide by providing a modern, accessible, and efficient case management platform. In many jurisdictions, access to justice is hampered by outdated technology and paper-based processes. This project bridges that gap by offering a comprehensive digital solution that serves courts, legal professionals, and citizens alike.
+
+## Impact
+
+### Access to Justice
+- Reduces barriers to legal services through digital accessibility
+- Enables remote court proceedings and document management
+- Streamlines case filing and tracking for self-represented litigants
+- Makes legal processes more transparent and understandable
+
+### Judicial Efficiency
+- Modernizes court operations with paperless workflows
+- Reduces case backlogs through better management tools
+- Enables data-driven decision making for resource allocation
+- Supports remote and hybrid court operations
+
+### Global Standards
+- Open-source platform adaptable to different legal systems
+- Built with international best practices for court technology
+- Supports multiple languages and jurisdictions
+- Promotes transparency and accountability in judicial processes
+
+## Prerequisites
+
+Before starting, ensure you have the following installed:
+
+1. **Rust and Cargo**
 ```bash
-brew install brew/spin
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
-## Install Leptos
+
+2. **Required Rust Targets**
 ```bash
-cargo install --locked leptos
-```
-## Add WASM target
-```bash
-rustup target add wasm32-unknown-unknown &&\
+rustup target add wasm32-unknown-unknown
 rustup target add wasm32-wasi
 ```
 
-## Run the project
+3. **Leptos**
 ```bash
-spin up --build
+cargo install --locked leptos-cli
 ```
+
+4. **Spin**
+- macOS:
+  ```bash
+  brew install fermyon/tap/spin
+  ```
+- Windows/Linux:
+  Visit [Spin Installation Guide](https://developer.fermyon.com/spin/install)
+
+5. **Cargo Make** (Task Runner)
+```bash
+cargo install --force cargo-make
+```
+
+## Database Setup
+
+Start the PostgreSQL database using Docker:
+```bash
+docker run --name ocfs-pg \
+  -e POSTGRES_USER=app_user \
+  -e POSTGRES_PASSWORD=dev_only_pwd \
+  -e POSTGRES_DB=app_db \
+  -p 5432:5432 \
+  -d postgres:latest
+```
+
+## Development
+
+### Available Commands
+
+All commands use `cargo make` for consistency across platforms:
+
+Unix/Linux/Mac:
+```bash
+cargo make fmt     # Format code
+cargo make clean   # Clean build artifacts
+cargo make up      # Build project
+cargo make test    # Run tests
+cargo make watch   # Start dev server with hot-reload
+cargo make deploy  # Deploy application
+cargo make run     # Run all tasks (fmt, up, test)
+```
+
+Windows:
+```powershell
+cargo make fmt        # Format code
+cargo make clean      # Clean build artifacts
+cargo make up-win     # Build project
+cargo make test       # Run tests
+cargo make watch-win  # Start dev server with hot-reload
+cargo make deploy-win # Deploy application
+cargo make run-win    # Run all tasks (fmt, up, test)
+```
+
+### Quick Start
+
+1. **Clone and Enter Project**
+```bash
+git clone <repository-url>
+cd lexodus
+```
+
+2. **Start Database**
+```bash
+docker run --name ocfs-pg -e POSTGRES_USER=app_user -e POSTGRES_PASSWORD=dev_only_pwd -e POSTGRES_DB=app_db -p 5432:5432 -d postgres:latest
+```
+
+3. **Development Mode**
+Unix/Linux/Mac:
+```bash
+cargo make watch
+```
+Windows:
+```powershell
+cargo make watch-win
+```
+
+## Core Features
+
+### Case Management
+- Comprehensive case lifecycle management
+- Document filing and tracking
+- Hearing scheduling and management
+- Party management and notifications
+
+### Document Management
+- Secure document storage and retrieval
+- Digital signing capabilities
+- Access control and permissions
+- Document sealing and unsealing
+
+### User Management
+- Role-based access control
+- Profile and preference management
+- Activity tracking
+- Notification management
+
+### Communication
+- Real-time chat for case participants
+- Secure messaging system
+- Notification preferences
+- Activity tracking and auditing
+
+### Financial Management
+- Payment processing
+- Financial transaction tracking
+- Fee management
+- Payment history
+
+Before starting, ensure you have the following installed:
+
+1. **Rust and Cargo**
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+2. **Required Rust Targets**
+```bash
+rustup target add wasm32-unknown-unknown
+rustup target add wasm32-wasi
+```
+
+3. **Leptos CLI**
+```bash
+cargo install cargo-leptos --locked
+```
+
+4. **Spin**
+- macOS:
+  ```bash
+  brew install fermyon/tap/spin
+  ```
+- Windows/Linux:
+  Visit [Spin Installation Guide](https://developer.fermyon.com/spin/install)
+
+5. **Cargo Make** (Task Runner)
+```bash
+cargo install --force cargo-make
+```
+
+[Rest of the README remains the same...]
+
+## Database Setup
+
+Start the PostgreSQL database using Docker:
+```bash
+docker run --name ocfs-pg \
+  -e POSTGRES_USER=app_user \
+  -e POSTGRES_PASSWORD=dev_only_pwd \
+  -e POSTGRES_DB=app_db \
+  -p 5432:5432 \
+  -d postgres:latest
+```
+
+## Development
+
+### Available Commands
+
+All commands use `cargo make` for consistency across platforms:
+
+Unix/Linux/Mac:
+```bash
+cargo make fmt     # Format code
+cargo make clean   # Clean build artifacts
+cargo make up      # Build project
+cargo make test    # Run tests
+cargo make watch   # Start dev server with hot-reload
+cargo make deploy  # Deploy application
+cargo make run     # Run all tasks (fmt, up, test)
+```
+
+Windows:
+```powershell
+cargo make fmt        # Format code
+cargo make clean      # Clean build artifacts
+cargo make up-win     # Build project
+cargo make test       # Run tests
+cargo make watch-win  # Start dev server with hot-reload
+cargo make deploy-win # Deploy application
+cargo make run-win    # Run all tasks (fmt, up, test)
+```
+
+### Quick Start
+
+1. **Clone and Enter Project**
+```bash
+git clone git@github.com:Open-Case-Filing/Lexodus.git
+cd lexodus
+```
+
+2. **Start Database**
+```bash
+docker run --name ocfs-pg -e POSTGRES_USER=app_user -e POSTGRES_PASSWORD=dev_only_pwd -e POSTGRES_DB=app_db -p 5432:5432 -d postgres:latest
+```
+
+3. **Development Mode**
+Unix/Linux/Mac:
+```bash
+cargo make watch
+```
+Windows:
+```powershell
+cargo make watch-win
+```
+
+## Project Structure
+
+```
+src/
+├── server/
+│   ├── commands/           # State-modifying operations
+│   ├── queries/            # Read-only operations
+│   ├── models/            # Data structures
+│   └── db/               # Database connections
+│
+├── components/           # Reusable UI components
+│   ├── case_management/
+│   ├── document_management/
+│   ├── user_management/
+│   ├── chat/
+│   └── activity_tracking/
+│
+└── pages/               # Page components
+    ├── case_management.rs
+    ├── document_management.rs
+    ├── user_management.rs
+    ├── chat.rs
+    └── activity_tracking.rs
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 # Architecture
 
@@ -133,6 +389,11 @@ pub async fn verify_signature(document_id: i64, signature: String) -> Result<boo
 5. `server/commands/user_management.rs`:
 ```rust
 pub async fn set_notification_preference(user_id: i64, notification_type: String, enabled: bool) -> Result<String, ServerFnError> { /* ... */ }
+
+pub async fn update_user_settings(user_id: i64, settings: UserSettings) -> Result<String, ServerFnError> { /* ... */ }
+pub async fn update_user_profile(user_id: i64, profile: UserProfile) -> Result<String, ServerFnError> { /* ... */ }
+pub async fn update_user_password(user_id: i64, old_password: String, new_password: String) -> Result<String, ServerFnError> { /* ... */ }
+
 pub async fn update_user_presence(user_id: i64, status: String) -> Result<String, ServerFnError> { /* ... */ }
 ```
 

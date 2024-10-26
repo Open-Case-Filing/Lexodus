@@ -108,7 +108,6 @@ cfg_if! {
     }
 }
 
-
 #[component]
 pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
     let create_case = create_server_action::<CreateCase>();
@@ -411,7 +410,6 @@ pub fn CaseManagement() -> impl IntoView {
                         "Create New Case"
                     </button>
                 </div>
-                <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
                 <Transition fallback=move || ()>
                   {move || {
                       let user = move || {
@@ -424,15 +422,17 @@ pub fn CaseManagement() -> impl IntoView {
                       };
                       view! {
                         <Show when=move || user().is_some() fallback=|| ().into_view()>
+                          <div class=move || format!("form-container px-4 sm:px-0 {}", if show_form.get() { "visible" } else { "" })>
                           <CreateCaseForm user=user()/>
+                            </div>
+                            <CaseList/>
                         </Show>
                       }
                   }}
 
                 </Transition>
 
-                </div>
-                <CaseList />
+
             </div>
         </DefaultLayout>
     }
@@ -548,31 +548,33 @@ pub async fn create_case(
     info!("Starting case creation process");
 
     // Parse user ID
-    let user_id_i64 = user_id.parse::<i64>()
+    let user_id_i64 = user_id
+        .parse::<i64>()
         .map_err(|_| LexodusAppError::BadRequest("Invalid user ID format".to_string()))?;
 
     // Parse court ID
-    let court_id_i64 = court_id.parse::<i64>()
+    let court_id_i64 = court_id
+        .parse::<i64>()
         .map_err(|_| LexodusAppError::BadRequest("Invalid court ID format".to_string()))?;
 
     // Parse judge ID if present
-    let assigned_judge_id_i64 = if let Some(judge_id) = assigned_judge_id {
-        if judge_id.is_empty() {
-            None
+    let assigned_judge_id_i64 =
+        if let Some(judge_id) = assigned_judge_id {
+            if judge_id.is_empty() {
+                None
+            } else {
+                Some(judge_id.parse::<i64>().map_err(|_| {
+                    LexodusAppError::BadRequest("Invalid judge ID format".to_string())
+                })?)
+            }
         } else {
-            Some(judge_id.parse::<i64>()
-                .map_err(|_| LexodusAppError::BadRequest("Invalid judge ID format".to_string()))?)
-        }
-    } else {
-        None
-    };
+            None
+        };
 
     // Get database connection
-    let db_url = variables::get("db_url")
-        .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
+    let db_url = variables::get("db_url").map_err(|_| LexodusAppError::DBConnectionNotFound)?;
 
-    let conn = Connection::open(&db_url)
-        .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
+    let conn = Connection::open(&db_url).map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
     // Generate case number
     let case_number = generate_case_number(&conn, court_id_i64, &filed_date, None)?;
@@ -635,11 +637,14 @@ pub async fn create_case(
     };
 
     match execute_result {
-        Ok(_) => Ok(format!("Case created successfully with number {}", case_number)),
+        Ok(_) => Ok(format!(
+            "Case created successfully with number {}",
+            case_number
+        )),
         Err(e) => Err(ServerFnError::ServerError(format!(
             "Failed to create case: {}",
             e
-        )))
+        ))),
     }
 }
 
@@ -674,13 +679,10 @@ pub async fn log_failed_case_creation(
 }
 #[server(GetCases, "/api")]
 pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
-  // Get database connection
-  let db_url = variables::get("db_url")
-      .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
-// Open Connection
-  let conn = Connection::open(&db_url)
-      .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
-
+    // Get database connection
+    let db_url = variables::get("db_url").map_err(|_| LexodusAppError::DBConnectionNotFound)?;
+    // Open Connection
+    let conn = Connection::open(&db_url).map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
     let sql = "SELECT c.id, c.case_number, c.title, c.status, c.filed_date,
                c.court_id, co.name as court_name,
@@ -692,7 +694,8 @@ pub async fn get_cases() -> Result<Vec<Case>, ServerFnError> {
                LEFT JOIN judicial_officers j ON c.assigned_judge_id = j.id
                ORDER BY c.filed_date DESC";
 
-    let rowset = conn.query(sql, &[])
+    let rowset = conn
+        .query(sql, &[])
         .map_err(|e| LexodusAppError::DBError("Failed to execute query".to_string()))?;
     let cases: Vec<Case> = rowset
         .rows
@@ -782,12 +785,10 @@ pub async fn update_case_status(case_id: i64, new_status: String) -> Result<Stri
 #[server(GetJudges, "/api")]
 pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
     // Get database connection
-    let db_url = variables::get("db_url")
-        .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
+    let db_url = variables::get("db_url").map_err(|_| LexodusAppError::DBConnectionNotFound)?;
 
     // Open Connection
-    let conn = Connection::open(&db_url)
-        .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
+    let conn = Connection::open(&db_url).map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
     let sql = "SELECT
                 jo.id,
@@ -798,7 +799,8 @@ pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
                WHERE jo.status = 'ACTIVE'
                ORDER BY u.full_name";
 
-    let rowset = conn.query(sql, &[])
+    let rowset = conn
+        .query(sql, &[])
         .map_err(|e| LexodusAppError::DBError("Failed to execute query".to_string()))?;
 
     let judges: Vec<Judge> = rowset
@@ -826,12 +828,10 @@ pub async fn get_judges() -> Result<Vec<Judge>, ServerFnError> {
 #[server(GetCourts, "/api")]
 pub async fn get_courts() -> Result<Vec<Court>, ServerFnError> {
     // Get database connection
-    let db_url = variables::get("db_url")
-        .map_err(|_| LexodusAppError::DBConnectionNotFound)?;
+    let db_url = variables::get("db_url").map_err(|_| LexodusAppError::DBConnectionNotFound)?;
 
     // Open Connection
-    let conn = Connection::open(&db_url)
-        .map_err(|e| LexodusAppError::DBError(e.to_string()))?;
+    let conn = Connection::open(&db_url).map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
     let sql = "SELECT
                 c.id,
@@ -841,7 +841,8 @@ pub async fn get_courts() -> Result<Vec<Court>, ServerFnError> {
                FROM courts c
                ORDER BY c.name";
 
-    let rowset = conn.query(sql, &[])
+    let rowset = conn
+        .query(sql, &[])
         .map_err(|e| LexodusAppError::DBError("Failed to execute query".to_string()))?;
 
     let courts: Vec<Court> = rowset

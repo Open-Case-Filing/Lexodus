@@ -1,0 +1,68 @@
+# Format code - 'cargo make fmt'
+[tasks.fmt]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+# Clean - 'cargo make clean'
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+# Unix/Mac build - 'cargo make up'
+[tasks.up]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin up --build"]
+dependencies = ["clean"]
+
+# Windows build - 'cargo make up-win'
+[tasks.up-win]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin up --build"]
+dependencies = ["clean"]
+
+# Test - 'cargo make test'
+[tasks.test]
+command = "cargo"
+args = ["test"]
+dependencies = ["clean"]
+
+# Unix/Mac all tasks - 'cargo make run'
+[tasks.run]
+dependencies = [
+    "fmt",
+    "up",
+    "test"
+]
+
+# Windows all tasks - 'cargo make run-win'
+[tasks.run-win]
+dependencies = [
+    "fmt",
+    "up-win",
+    "test"
+]
+
+# Unix/Mac dev mode - 'cargo make watch'
+[tasks.watch]
+dependencies = ["clean"]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin watch"]
+
+# Windows dev mode - 'cargo make watch-win'
+[tasks.watch-win]
+dependencies = ["clean"]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin watch"]
+
+# Unix/Mac deploy - 'cargo make deploy'
+[tasks.deploy]
+dependencies = ["clean", "up"]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin deploy"]
+
+# Windows deploy - 'cargo make deploy-win'
+[tasks.deploy-win]
+dependencies = ["clean", "up-win"]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin deploy"]
