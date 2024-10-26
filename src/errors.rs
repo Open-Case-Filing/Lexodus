@@ -4,6 +4,7 @@ use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumString;
 use thiserror::Error;
+use leptos::*;
 
 #[derive(Debug, Clone, Error, Diagnostic, Serialize, Deserialize, EnumString)]
 pub enum LexodusAppError {
@@ -36,6 +37,8 @@ pub enum LexodusAppError {
     #[error("Bad Request: {0}")]
     BadRequest(String),
 }
+
+
 
 impl LexodusAppError {
     pub fn status_code(&self) -> StatusCode {

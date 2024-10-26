@@ -1,8 +1,7 @@
-mod app;
+mod routes;
 
 mod functions;
 mod layouts;
-mod models;
 mod pages;
 
 mod domain;
@@ -22,7 +21,7 @@ if #[cfg(feature = "hydrate")] {
 
     #[wasm_bindgen]
     pub fn hydrate() {
-      use app::*;
+      use routes::*;
 
       console_error_panic_hook::set_once();
 
