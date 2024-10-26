@@ -1,39 +1,68 @@
-[tasks.format]
-# Installs rustfmt if not already installed
+# Format code - 'cargo make fmt'
+[tasks.fmt]
 install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--", "--emit=files"]
-description = "Formats the code using rustfmt"
 
+# Clean - 'cargo make clean'
 [tasks.clean]
 command = "cargo"
 args = ["clean"]
-description = "Cleans the build artifacts"
 
-[tasks.build]
+# Unix/Mac build - 'cargo make up'
+[tasks.up]
 command = "sh"
 args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin up --build"]
-description = "Builds the project using Spin"
 dependencies = ["clean"]
 
+# Windows build - 'cargo make up-win'
+[tasks.up-win]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin up --build"]
+dependencies = ["clean"]
+
+# Test - 'cargo make test'
 [tasks.test]
 command = "cargo"
 args = ["test"]
-description = "Runs the test suite"
 dependencies = ["clean"]
 
-[tasks.lexodus]
-description = "Main task that runs format, build, and test in sequence"
+# Unix/Mac all tasks - 'cargo make run'
+[tasks.run]
 dependencies = [
-    "format",
-    "build",
+    "fmt",
+    "up",
     "test"
 ]
 
+# Windows all tasks - 'cargo make run-win'
+[tasks.run-win]
+dependencies = [
+    "fmt",
+    "up-win",
+    "test"
+]
 
-# Soin watch
-[tasks.dev]
-description = "Development task with hot-reload"
+# Unix/Mac dev mode - 'cargo make watch'
+[tasks.watch]
 dependencies = ["clean"]
 command = "sh"
 args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin watch"]
+
+# Windows dev mode - 'cargo make watch-win'
+[tasks.watch-win]
+dependencies = ["clean"]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin watch"]
+
+# Unix/Mac deploy - 'cargo make deploy'
+[tasks.deploy]
+dependencies = ["clean", "up"]
+command = "sh"
+args = ["-c", "LEPTOS_OUTPUT_NAME=lexodus spin deploy"]
+
+# Windows deploy - 'cargo make deploy-win'
+[tasks.deploy-win]
+dependencies = ["clean", "up-win"]
+command = "powershell"
+args = ["-Command", "$env:LEPTOS_OUTPUT_NAME='lexodus'; spin deploy"]
