@@ -1,11 +1,13 @@
 use crate::layouts::default::*;
-use crate::providers::auth::AuthContext;
 use cfg_if::cfg_if;
 use leptos::*;
 use leptos_meta::Meta;
 use leptos_meta::Title;
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
+use crate::providers::auth::AuthContext;
+use crate::domain::models::user::SafeUser;
+
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
@@ -29,7 +31,6 @@ pub async fn create_user(
     role_id: i64,
 ) -> Result<String, ServerFnError> {
     println!("--> Adding a new user: {}", username);
-    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
 
     let db_url = variables::get("db_url").unwrap();
     let conn = Connection::open(&db_url)?;
@@ -90,7 +91,7 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
     Ok(users)
 }
 #[component]
-pub fn CreateUserForm() -> impl IntoView {
+pub fn CreateUserForm(user: Option<SafeUser>) -> impl IntoView {
     let create_user = create_server_action::<CreateUser>();
     let response = create_user.value();
 
@@ -101,6 +102,12 @@ pub fn CreateUserForm() -> impl IntoView {
             <h3 class="text-xl font-semibold text-lexodus-800 mb-6">"Add New User"</h3>
 
             <ActionForm action=create_user>
+            <input type="hidden" name="user_id"
+                value=match user {
+                    Some(u) => u.id.to_string(),
+                    None => "-1".to_string(),
+                }
+            />q
                 <div class="mb-4">
                     <label for="username" class="block text-lexodus-700 mb-1">"Username:"</label>
                     <input type="text" id="username" name="username" class="w-full px-4 py-2 bg-gray-100 text-lexodus-800 rounded border border-lexodus-200 focus:outline-none focus:ring-2 focus:ring-lexouds-500" required/>
@@ -201,14 +208,13 @@ pub fn UserManagement() -> impl IntoView {
                       };
                       view! {
                         <Show when=move || user().is_some() fallback=|| ().into_view()>
-                          <UserList />
-                          <CreateUserForm />
+                          <UserList/>
+                          <CreateUserForm user=user()/>
                         </Show>
                       }
                   }}
 
                 </Transition>
-
 
                 </div>
             </div>
