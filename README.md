@@ -228,7 +228,7 @@ cargo make run-win    # Run all tasks (fmt, up, test)
 
 1. **Clone and Enter Project**
 ```bash
-git clone <repository-url>
+git clone git@github.com:Open-Case-Filing/Lexodus.git
 cd lexodus
 ```
 
