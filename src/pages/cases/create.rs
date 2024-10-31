@@ -239,7 +239,11 @@ pub fn CreateCaseForm(user: Option<SafeUser>) -> impl IntoView {
                         None => "-1".to_string(),
                     }
                 />
-
+                <input
+                    type="hidden"
+                    name="status"
+                    value="PENDING"  // Or whatever default status you want
+                />
                 <div class="mt-6">
                     <button type="submit"
                         class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-lexodus-600 hover:bg-lexodus-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lexodus-500"
@@ -430,22 +434,27 @@ pub struct Court {
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
-    title: String,
-    status: String,
-    filed_date: String,
-    court_id: String,
-    case_type: String,
-    nature_of_suit: Option<String>,
-    filing_type: String,
-    security_level: String,
-    assigned_judge_id: Option<String>,
-    jury_demand: Option<String>,
-    jurisdictional_basis: Option<String>,
-    user_id: String,
-    demand_amount: Option<String>,
+  title: String,
+  status: String,        // Make sure this is included
+  filed_date: String,
+  court_id: String,
+  case_type: String,
+  nature_of_suit: Option<String>,
+  filing_type: String,
+  security_level: String,
+  assigned_judge_id: Option<String>,
+  jury_demand: Option<String>,
+  jurisdictional_basis: Option<String>,
+  user_id: String,
+  demand_amount: Option<String>,
 ) -> Result<String, ServerFnError> {
     info!("Starting case creation process");
-
+    let status = status.to_uppercase();
+    if !["PENDING", "ACTIVE", "CLOSED"].contains(&status.as_str()) {
+        return Err(ServerFnError::ServerError(
+            "Invalid case status".to_string(),
+        ));
+    }
     // Parse parameters
     let user_id_i64 = user_id
         .parse::<i64>()

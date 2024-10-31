@@ -33,6 +33,13 @@ pub struct CaseCreate {
     pub created_by: i64
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CaseStatus {
+    PENDING,
+    ACTIVE,
+    CLOSED,
+}
+
 
 #[derive(Debug)]
 pub struct CreateCaseParams {
