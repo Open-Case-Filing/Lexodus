@@ -2,14 +2,14 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::pages::cases::*;
+
 use crate::pages::user_management::*;
 
 use crate::pages::cases::{
     create::CaseManagement,
-    create::CreateCaseForm,
-    edit_case::EditCase,
-    list_case::ListCases,
+    // create::CreateCaseForm,
+    // edit_case::EditCase,
+    // list_case::ListCases,
     // search_case::SearchCases,
     view_case::ViewCase,
 };
@@ -47,10 +47,10 @@ pub fn App() -> impl IntoView {
             }
           />
           <Route path="cases" view=CaseManagement>
-              <Route path="" view=ListCases/>
+              // <Route path="" view=CaseManagement/>
               // <Route path="new" view=CreateCaseForm user=user/>
               <Route path=":id" view=ViewCase/>
-              <Route path=":id/edit" view=EditCase/>
+              // <Route path=":id/edit" view=EditCase/>
               // <Route path="search" view=SearchCases/>
           </Route>
             // <Route path="/case-management/activity" view=Activity/>
