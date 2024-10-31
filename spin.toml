@@ -34,7 +34,7 @@ sqlite_databases = ["default"]
 
 
 [component.lexodus.build]
-command = "cargo leptos build --release && cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
+command = "echo $test; cargo leptos build --release && cargo build --lib --target wasm32-wasip1 --release --no-default-features --features ssr"
 watch = ["src/**/*.rs", "Cargo.toml"]
 
 
@@ -78,6 +78,7 @@ files = [{ source = "public/images", destination = "/" }]
 
 
 [component.lexodus.variables]
+test = "hello"
 token = "{{ secret }}"
 dev_value = "{{dev}}"
 db_url = "{{db_url}}"

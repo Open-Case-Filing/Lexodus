@@ -1,4 +1,4 @@
--- 1. First recreate tables in correct order
+tab-- 1. First recreate tables in correct order
 DROP TABLE IF EXISTS financial_transactions CASCADE;
 DROP TABLE IF EXISTS case_fees CASCADE;
 DROP TABLE IF EXISTS fee_schedules CASCADE;
