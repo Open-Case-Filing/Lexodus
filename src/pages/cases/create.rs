@@ -19,11 +19,17 @@ cfg_if! {
         use spin_sdk::pg::{Connection, ParameterValue, DbValue};
         use spin_sdk::{variables};
         use crate::errors::LexodusAppError;
+        use chrono::NaiveDate;
         use log::info;
 
         fn case_number_exists(conn: &Connection, case_number: &str, filed_date: &str) -> Result<bool, ServerFnError> {
+            let sql = r#"
+                SELECT 1 FROM cases
+                WHERE case_number = $1
+                AND filed_date = TO_DATE($2, 'YYYY-MM-DD')"#;  // Convert the date here
+
             let result = conn.query(
-                "SELECT 1 FROM cases WHERE case_number = $1 AND filed_date = $2",
+                sql,
                 &[
                     ParameterValue::Str(case_number.to_string()),
                     ParameterValue::Str(filed_date.to_string()),
@@ -35,15 +41,18 @@ cfg_if! {
 
         fn generate_case_number(conn: &Connection, court_id: i64, filed_date: &str, judge_name: Option<&str>) -> Result<String, ServerFnError> {
             let year = filed_date[2..4].to_string(); // Extract year from filed_date (assuming format is YYYY-MM-DD)
-
+            let sql = r#"
+                SELECT case_number
+                FROM cases
+                WHERE court_id = $1
+                AND case_number LIKE $2 || '%'
+                AND filed_date = TO_DATE($3, 'YYYY-MM-DD')  -- Convert the date here
+                ORDER BY REGEXP_REPLACE(case_number, '^(\d+)-(\d+)-(\d+)-.*$', '\3')::integer DESC
+                LIMIT 1"#;
             for attempt in 1..=100 {  // Increase max attempts
                 // Get the latest case number for this court and year
                 let result = conn.query(
-                    "SELECT case_number
-                     FROM cases
-                     WHERE court_id = $1 AND case_number LIKE $2 || '%' AND filed_date = $3
-                     ORDER BY REGEXP_REPLACE(case_number, '^(\\d+)-(\\d+)-(\\d+)-.*$', '\\3')::integer DESC
-                     LIMIT 1",
+                  sql,
                     &[
                         ParameterValue::Int64(court_id),
                         ParameterValue::Str(format!("{}-{}-", court_id, year)),
@@ -434,28 +443,34 @@ pub struct Court {
 
 #[server(CreateCase, "/api")]
 pub async fn create_case(
-  title: String,
-  status: String,        // Make sure this is included
-  filed_date: String,
-  court_id: String,
-  case_type: String,
-  nature_of_suit: Option<String>,
-  filing_type: String,
-  security_level: String,
-  assigned_judge_id: Option<String>,
-  jury_demand: Option<String>,
-  jurisdictional_basis: Option<String>,
-  user_id: String,
-  demand_amount: Option<String>,
+    title: String,
+    status: String,
+    filed_date: String,
+    court_id: String,
+    case_type: String,
+    nature_of_suit: Option<String>,
+    filing_type: String,
+    security_level: String,
+    assigned_judge_id: Option<String>,
+    jury_demand: Option<String>,
+    jurisdictional_basis: Option<String>,
+    user_id: String,
+    demand_amount: Option<String>,
 ) -> Result<String, ServerFnError> {
     info!("Starting case creation process");
+
+    // Validate status
     let status = status.to_uppercase();
     if !["PENDING", "ACTIVE", "CLOSED"].contains(&status.as_str()) {
-        return Err(ServerFnError::ServerError(
-            "Invalid case status".to_string(),
-        ));
+        return Err(ServerFnError::ServerError("Invalid case status".to_string()));
     }
-    // Parse parameters
+
+    // Parse and validate the date
+    let parsed_date = NaiveDate::parse_from_str(&filed_date, "%Y-%m-%d")
+        .map_err(|_| LexodusAppError::BadRequest("Invalid date format".to_string()))?;
+    let formatted_date = parsed_date.format("%Y-%m-%d").to_string();
+
+    // Parse other parameters
     let user_id_i64 = user_id
         .parse::<i64>()
         .map_err(|_| LexodusAppError::BadRequest("Invalid user ID format".to_string()))?;
@@ -488,108 +503,76 @@ pub async fn create_case(
         None
     };
 
-    let params = CreateCaseParams::new(
-        title,
-        status,
-        filed_date,
-        court_id_i64,
-        case_type,
-        filing_type,
-        security_level,
-        user_id_i64,
-    )
-    .with_nature_of_suit(nature_of_suit.unwrap_or_default());
-
-    let params = if let Some(judge_id) = assigned_judge_id_i64 {
-        params.with_assigned_judge(judge_id)
-    } else {
-        params
-    };
-
-    let params = if let Some(demand) = demand_amount_f64 {
-        params.with_demand_amount(demand)
-    } else {
-        params
-    };
-
-    let params = if let Some(jury) = jury_demand {
-        params.with_jury_demand(jury)
-    } else {
-        params
-    };
-
-    let params = if let Some(basis) = jurisdictional_basis {
-        params.with_jurisdictional_basis(basis)
-    } else {
-        params
-    };
-
     let db_url = variables::get("db_url").map_err(|_| LexodusAppError::DBConnectionNotFound)?;
     let conn = Connection::open(&db_url).map_err(|e| LexodusAppError::DBError(e.to_string()))?;
 
     conn.execute("BEGIN", &[])?;
 
-    let case_number = generate_case_number(&conn, params.court_id, &params.filed_date, None)?;
+    let case_number = generate_case_number(&conn, court_id_i64, &formatted_date, None)?;
 
-    let (sql, parameters) = if let Some(judge_id) = params.assigned_judge_id {
+    let (sql, parameters) = if let Some(judge_id) = assigned_judge_id_i64 {
         (
-            r#"INSERT INTO cases (
+            r#"
+            INSERT INTO cases (
                 case_number, title, case_type, nature_of_suit,
                 filing_type, status, filed_date, court_id,
-                assigned_judge_id, security_level, jury_demand,
-                jurisdictional_basis, created_by, updated_by,
-                demand_amount, sealed
+                security_level, jury_demand, jurisdictional_basis,
+                created_by, demand_amount, sealed, assigned_judge_id
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7::date, $8,
-                $9, $10, $11, $12, $13, $13,
-                $14, false
+                $1, $2, $3, $4, $5, $6,
+                TO_DATE($7, 'YYYY-MM-DD'),
+                $8, $9, $10, $11, $12,
+                TO_NUMBER($13, '999999999999999D99'),
+                false, $14
             )
             RETURNING id"#,
             vec![
                 ParameterValue::Str(case_number.clone()),
-                ParameterValue::Str(params.title.clone()),
-                ParameterValue::Str(params.case_type.clone()),
-                ParameterValue::Str(params.nature_of_suit.clone().unwrap_or_default()),
-                ParameterValue::Str(params.filing_type.clone()),
-                ParameterValue::Str(params.status.clone()),
-                ParameterValue::Str(params.filed_date.clone()),
-                ParameterValue::Int64(params.court_id),
-                ParameterValue::Int64(judge_id),
-                ParameterValue::Str(params.security_level.clone()),
-                ParameterValue::Str(params.jury_demand.clone().unwrap_or_default()),
-                ParameterValue::Str(params.jurisdictional_basis.clone().unwrap_or_default()),
-                ParameterValue::Int64(params.user_id),
-                ParameterValue::Str(params.demand_amount.unwrap_or(0.0).to_string())
+                ParameterValue::Str(title),
+                ParameterValue::Str(case_type),
+                ParameterValue::Str(nature_of_suit.unwrap_or_default()),
+                ParameterValue::Str(filing_type),
+                ParameterValue::Str(status.clone()),
+                ParameterValue::Str(filed_date.clone()),
+                ParameterValue::Int64(court_id_i64),
+                ParameterValue::Str(security_level),
+                ParameterValue::Str(jury_demand.unwrap_or_default()),
+                ParameterValue::Str(jurisdictional_basis.unwrap_or_default()),
+                ParameterValue::Int64(user_id_i64),
+                ParameterValue::Str(demand_amount_f64.unwrap_or(0.0).to_string()),
+                ParameterValue::Int64(judge_id)
             ]
         )
     } else {
         (
-            r#"INSERT INTO cases (
+            r#"
+            INSERT INTO cases (
                 case_number, title, case_type, nature_of_suit,
                 filing_type, status, filed_date, court_id,
-                security_level, jury_demand,
-                jurisdictional_basis, created_by, updated_by,
-                demand_amount, sealed
+                security_level, jury_demand, jurisdictional_basis,
+                created_by, demand_amount, sealed
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7::date, $8,
-                $9, $10, $11, $12, $12,
-                $13, false
+                $1, $2, $3, $4, $5, $6,
+                TO_DATE($7, 'YYYY-MM-DD'),
+                $8, $9, $10, $11, $12,
+                TO_NUMBER($13, '999999999999999D99'),
+                false
             )
             RETURNING id"#,
             vec![
                 ParameterValue::Str(case_number.clone()),
-                ParameterValue::Str(params.title.clone()),
-                ParameterValue::Str(params.case_type.clone()),
-                ParameterValue::Str(params.nature_of_suit.clone().unwrap_or_default()),
-                ParameterValue::Str(params.filing_type.clone()),
-                ParameterValue::Str(params.status.clone()),
-                ParameterValue::Str(params.filed_date.clone()),
-                ParameterValue::Int64(params.court_id),
-                ParameterValue::Str(params.security_level.clone()),
-                ParameterValue::Str(params.jury_demand.clone().unwrap_or_default()),
-                ParameterValue::Str(params.jurisdictional_basis.clone().unwrap_or_default()),
-                ParameterValue::Int64(params.user_id),
-                ParameterValue::Str(params.demand_amount.unwrap_or(0.0).to_string())
+                ParameterValue::Str(title),
+                ParameterValue::Str(case_type),
+                ParameterValue::Str(nature_of_suit.unwrap_or_default()),
+                ParameterValue::Str(filing_type),
+                ParameterValue::Str(status.clone()),
+                ParameterValue::Str(filed_date.clone()),
+                ParameterValue::Int64(court_id_i64),
+                ParameterValue::Str(security_level),
+                ParameterValue::Str(jury_demand.unwrap_or_default()),
+                ParameterValue::Str(jurisdictional_basis.unwrap_or_default()),
+                ParameterValue::Int64(user_id_i64),
+                ParameterValue::Str(demand_amount_f64.unwrap_or(0.0).to_string())
             ]
         )
     };
@@ -598,6 +581,7 @@ pub async fn create_case(
 
     match result {
         Ok(_) => {
+            // Insert into case_status_history
             let status_sql = r#"
                 INSERT INTO case_status_history (
                     case_id, case_filed_date, old_status, new_status,
@@ -605,25 +589,26 @@ pub async fn create_case(
                 )
                 SELECT
                     id,
-                    filed_date,
+                    TO_DATE($1, 'YYYY-MM-DD'),
                     'DRAFT',
-                    $1,
                     $2,
+                    $3,
                     NOW(),
                     'Initial case filing'
                 FROM cases
-                WHERE case_number = $3"#;
+                WHERE case_number = $4"#;
 
             conn.execute(
                 status_sql,
                 &[
-                    ParameterValue::Str(params.status),
-                    ParameterValue::Int64(params.user_id),
+                    ParameterValue::Str(formatted_date),
+                    ParameterValue::Str(status),
+                    ParameterValue::Int64(user_id_i64),
                     ParameterValue::Str(case_number.clone()),
                 ],
             )?;
 
-            if let Some(amount) = params.demand_amount {
+            if let Some(amount) = demand_amount_f64 {
                 let demand_sql = r#"
                     INSERT INTO case_events (
                         case_id, case_filed_date, event_type_id,
@@ -653,8 +638,8 @@ pub async fn create_case(
                 conn.execute(
                     demand_sql,
                     &[
-                      ParameterValue::Str(amount.to_string()),
-                        ParameterValue::Int64(params.user_id),
+                        ParameterValue::Str(amount.to_string()),
+                        ParameterValue::Int64(user_id_i64),
                         ParameterValue::Str(case_number.clone()),
                     ],
                 )?;
