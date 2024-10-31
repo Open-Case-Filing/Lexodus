@@ -47,7 +47,7 @@ pub fn App() -> impl IntoView {
             }
           />
           <Route path="cases" view=CaseManagement>
-              // <Route path="" view=CaseManagement/>
+              <Route path="/" view=CaseManagement/>
               // <Route path="new" view=CreateCaseForm user=user/>
               <Route path=":id" view=ViewCase/>
               // <Route path=":id/edit" view=EditCase/>
