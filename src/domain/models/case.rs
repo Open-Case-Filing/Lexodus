@@ -17,7 +17,7 @@ pub struct Case {
     pub assigned_judge_id: Option<i64>,
     pub security_level: String,
     pub created_by: i64,
-    pub updated_by: Option<i64>
+    pub updated_by: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ pub struct CaseCreate {
     pub division_id: Option<i64>,
     pub assigned_judge_id: Option<i64>,
     pub security_level: String,
-    pub created_by: i64
+    pub created_by: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,7 +39,6 @@ pub enum CaseStatus {
     ACTIVE,
     CLOSED,
 }
-
 
 #[derive(Debug)]
 pub struct CreateCaseParams {

@@ -1,16 +1,9 @@
-use crate::domain::models::{
-  case::CreateCaseParams,
-  user::SafeUser
-};
+use crate::domain::models::{case::CreateCaseParams, user::SafeUser};
 use crate::layouts::default::*;
 use crate::providers::auth::AuthContext;
 use leptos::*;
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-
-
-
-
 
 use cfg_if::cfg_if;
 
@@ -439,8 +432,6 @@ pub struct Court {
     pub circuit: String,
 }
 
-
-
 #[server(CreateCase, "/api")]
 pub async fn create_case(
     title: String,
@@ -462,7 +453,9 @@ pub async fn create_case(
     // Validate status
     let status = status.to_uppercase();
     if !["PENDING", "ACTIVE", "CLOSED"].contains(&status.as_str()) {
-        return Err(ServerFnError::ServerError("Invalid case status".to_string()));
+        return Err(ServerFnError::ServerError(
+            "Invalid case status".to_string(),
+        ));
     }
 
     // Parse and validate the date
@@ -479,17 +472,18 @@ pub async fn create_case(
         .parse::<i64>()
         .map_err(|_| LexodusAppError::BadRequest("Invalid court ID format".to_string()))?;
 
-    let assigned_judge_id_i64 = if let Some(judge_id) = assigned_judge_id {
-        if judge_id.is_empty() {
-            None
+    let assigned_judge_id_i64 =
+        if let Some(judge_id) = assigned_judge_id {
+            if judge_id.is_empty() {
+                None
+            } else {
+                Some(judge_id.parse::<i64>().map_err(|_| {
+                    LexodusAppError::BadRequest("Invalid judge ID format".to_string())
+                })?)
+            }
         } else {
-            Some(judge_id.parse::<i64>().map_err(|_| {
-                LexodusAppError::BadRequest("Invalid judge ID format".to_string())
-            })?)
-        }
-    } else {
-        None
-    };
+            None
+        };
 
     let demand_amount_f64 = if let Some(amount) = demand_amount {
         if amount.is_empty() {
@@ -540,8 +534,8 @@ pub async fn create_case(
                 ParameterValue::Str(jurisdictional_basis.unwrap_or_default()),
                 ParameterValue::Int64(user_id_i64),
                 ParameterValue::Str(demand_amount_f64.unwrap_or(0.0).to_string()),
-                ParameterValue::Int64(judge_id)
-            ]
+                ParameterValue::Int64(judge_id),
+            ],
         )
     } else {
         (
@@ -572,8 +566,8 @@ pub async fn create_case(
                 ParameterValue::Str(jury_demand.unwrap_or_default()),
                 ParameterValue::Str(jurisdictional_basis.unwrap_or_default()),
                 ParameterValue::Int64(user_id_i64),
-                ParameterValue::Str(demand_amount_f64.unwrap_or(0.0).to_string())
-            ]
+                ParameterValue::Str(demand_amount_f64.unwrap_or(0.0).to_string()),
+            ],
         )
     };
 
@@ -646,11 +640,17 @@ pub async fn create_case(
             }
 
             conn.execute("COMMIT", &[])?;
-            Ok(format!("Case created successfully with number {}", case_number))
+            Ok(format!(
+                "Case created successfully with number {}",
+                case_number
+            ))
         }
         Err(e) => {
             conn.execute("ROLLBACK", &[])?;
-            Err(ServerFnError::ServerError(format!("Failed to create case: {}", e)))
+            Err(ServerFnError::ServerError(format!(
+                "Failed to create case: {}",
+                e
+            )))
         }
     }
 }

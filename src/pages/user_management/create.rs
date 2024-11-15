@@ -1,13 +1,12 @@
+use crate::domain::models::user::SafeUser;
 use crate::layouts::default::*;
+use crate::providers::auth::AuthContext;
 use cfg_if::cfg_if;
 use leptos::*;
 use leptos_meta::Meta;
 use leptos_meta::Title;
 use leptos_router::ActionForm;
 use serde::{Deserialize, Serialize};
-use crate::providers::auth::AuthContext;
-use crate::domain::models::user::SafeUser;
-
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
@@ -183,7 +182,7 @@ pub fn UserList() -> impl IntoView {
 }
 #[component]
 pub fn UserManagement() -> impl IntoView {
-  let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
+    let auth_context = use_context::<AuthContext>().expect("Failed to get AuthContext");
 
     view! {
         <Meta property="og:title" content="User Management | Lexodus"/>

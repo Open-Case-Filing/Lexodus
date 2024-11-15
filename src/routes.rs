@@ -2,7 +2,6 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-
 use crate::pages::user_management::*;
 
 use crate::pages::cases::{
