@@ -27,18 +27,57 @@ command = "cargo"
 args = ["test"]
 dependencies = ["clean"]
 
-# Unix/Mac all tasks - 'cargo make run'
+# Drop database - 'cargo make db-drop'
+[tasks.db-drop]
+command = "sqlx"
+args = ["database", "drop", "-y"]
+
+# Create database - 'cargo make db-create'
+[tasks.db-create]
+command = "sqlx"
+args = ["database", "create"]
+
+# Run migrations - 'cargo make db-migrate'
+[tasks.db-migrate]
+command = "sqlx"
+args = ["migrate", "run"]
+
+# Add new migration - 'cargo make db-new-migration'
+[tasks.db-new-migration]
+command = "sqlx"
+args = ["migrate", "add", "${@}"]
+
+# Reset database (drop, create, migrate) - 'cargo make db-reset'
+[tasks.db-reset]
+dependencies = ["db-drop", "db-create", "db-migrate"]
+
+# Check database - 'cargo make db-check'
+[tasks.db-check]
+command = "sqlx"
+args = ["database", "check"]
+
+# Prepare SQLx - 'cargo make db-prepare'
+[tasks.db-prepare]
+command = "sqlx"
+args = ["prepare", "--", "--all-features"]
+
+# Full database setup for development - 'cargo make db-setup'
+[tasks.db-setup]
+dependencies = ["db-reset", "db-prepare"]
+
+# Add database tasks to the main run commands
 [tasks.run]
 dependencies = [
     "fmt",
+    "db-setup",
     "up",
     "test"
 ]
 
-# Windows all tasks - 'cargo make run-win'
 [tasks.run-win]
 dependencies = [
     "fmt",
+    "db-setup",
     "up-win",
     "test"
 ]

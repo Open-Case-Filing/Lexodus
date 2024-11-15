@@ -76,6 +76,7 @@ All commands use `cargo make` for consistency across platforms:
 
 Unix/Linux/Mac:
 ```bash
+# Code and Build
 cargo make fmt     # Format code
 cargo make clean   # Clean build artifacts
 cargo make up      # Build project
@@ -83,10 +84,21 @@ cargo make test    # Run tests
 cargo make watch   # Start dev server with hot-reload
 cargo make deploy  # Deploy application
 cargo make run     # Run all tasks (fmt, up, test)
+
+# Database Commands
+cargo make db-drop    # Drop the database
+cargo make db-create  # Create the database
+cargo make db-migrate # Run migrations
+cargo make db-new-migration name  # Create new migration
+cargo make db-reset   # Full database reset (drop, create, migrate)
+cargo make db-check   # Check database
+cargo make db-prepare # Prepare SQLx
+cargo make db-setup   # Complete database setup
 ```
 
 Windows:
 ```powershell
+# Code and Build
 cargo make fmt        # Format code
 cargo make clean      # Clean build artifacts
 cargo make up-win     # Build project
@@ -94,6 +106,16 @@ cargo make test       # Run tests
 cargo make watch-win  # Start dev server with hot-reload
 cargo make deploy-win # Deploy application
 cargo make run-win    # Run all tasks (fmt, up, test)
+
+# Database Commands (same for Windows)
+cargo make db-drop    # Drop the database
+cargo make db-create  # Create the database
+cargo make db-migrate # Run migrations
+cargo make db-new-migration name  # Create new migration
+cargo make db-reset   # Full database reset
+cargo make db-check   # Check database
+cargo make db-prepare # Prepare SQLx
+cargo make db-setup   # Complete database setup
 ```
 
 ### Quick Start
