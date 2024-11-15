@@ -78,6 +78,7 @@ files = [{ source = "public/images", destination = "/" }]
 
 
 [component.lexodus.variables]
+test = "hello"
 token = "{{ secret }}"
 dev_value = "{{dev}}"
 db_url = "{{db_url}}"

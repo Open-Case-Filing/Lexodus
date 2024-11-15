@@ -5,7 +5,7 @@ cfg_if! {
     if #[cfg(feature = "ssr")] {
 use crate::errors::LexodusAppError;
 use std::sync::Arc;
-use chrono::{DateTime, Utc};
+use chrono::DateTime;
     }}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,7 +69,6 @@ impl From<User> for SafeUser {
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-    use chrono::naive::NaiveDateTime;
 
 use spin_sdk::sqlite::{
     Connection,
