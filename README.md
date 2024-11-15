@@ -188,10 +188,10 @@ cargo install --force cargo-make
 
 Start the PostgreSQL database using Docker:
 ```bash
-docker run --name ocfs-pg \
+docker run --name fc \
   -e POSTGRES_USER=app_user \
   -e POSTGRES_PASSWORD=dev_only_pwd \
-  -e POSTGRES_DB=app_db \
+  -e POSTGRES_DB=fc_db \
   -p 5432:5432 \
   -d postgres:latest
 ```
